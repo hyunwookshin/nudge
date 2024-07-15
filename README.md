@@ -6,6 +6,8 @@ curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python3 get-pip.py
 pip3 install pyyaml
 pip3 install pytz
+pip3 install flask
+pip3 install waitress
 ```
 
 ## Set up
@@ -32,6 +34,46 @@ Refer to https://www.youtube.com/watch?v=Y_u5KIeXiVI
 export NUDGE_CONFIG_PATH=./config.yaml
 export NUDGE_STORE_PATH=store
 ./remind [-d]
+```
+
+### Via Curl
+
+As shown in the `client/remind.sh` run this curl command:
+```
+curl -k -X POST https://<url>/add_reminder \
+   -H Content-Type:application/json \
+   -d '{
+      "Title": "Meeting with team",
+      "Description": "Discuss project status",
+      "Date": "2024-01-01",
+      "Time": "17:00:00",
+      "Link": "http://google.com",
+      "Priority": 2
+   }'
+```
+
+This requires the following nginx settings:
+
+```
+ server {
+     listen       443 ssl http2 default_server;
+     listen       [::]:443 ssl http2 default_server;
+     server_name  _;
+     root         /usr/share/nginx/html;
+     autoindex on;
+
+     ssl_certificate "/etc/pki/nginx/server.crt";
+     ssl_certificate_key "/etc/pki/nginx/private/server.key";
+     ssl_session_cache shared:SSL:1m;
+     ssl_session_timeout  10m;
+     ssl_ciphers HIGH:!aNULL:!MD5;
+     ssl_prefer_server_ciphers on;
+     # Nudge
+     location /add_reminder {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+}
 ```
 
 ## Sending reminders
