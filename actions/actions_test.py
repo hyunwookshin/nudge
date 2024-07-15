@@ -45,7 +45,7 @@ class TestEmailAction(unittest.TestCase):
         self.assertEqual(test_server.tls, False)
         email_action = emailaction.EmailAction(self.config,
                 False, test_server)
-        email_action.actuate(r)
+        email_action.actuate(r, {})
 
         self.assertEqual(test_server.tls, True)
         self.assertEqual(test_server.sender, "_sender@gmail.com")
@@ -59,7 +59,7 @@ class TestEmailAction(unittest.TestCase):
         self.assertEqual(test_server.tls, False)
         email_action = emailaction.EmailAction(self.config,
                 True, test_server)
-        email_action.actuate(r)
+        email_action.actuate(r, {})
 
         self.assertEqual(test_server.tls, True)
         self.assertEqual(test_server.sender, "_sender@gmail.com")
@@ -113,7 +113,7 @@ class TestAction:
     def __init__(self):
         self.actuated = False
 
-    def actuate(self, reminder, dryrun=False):
+    def actuate(self, reminder, history, dryrun=False):
         self.actuated = True
 
 if __name__ == "__main__":

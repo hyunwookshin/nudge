@@ -10,6 +10,9 @@ class FakeServer():
     def starttls(self):
         self.tls = True
 
+    def ehlo(self):
+        pass
+
     def login(self, sender, password):
         self.sender = sender
         self.password = password
