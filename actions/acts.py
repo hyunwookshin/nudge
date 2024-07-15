@@ -11,6 +11,8 @@ class Actions():
     def actuate(self, reminder, ignorets=False, dryrun=False):
         current_utc_time = self.getCurrentUTCTime()
         time_difference = reminder.time - current_utc_time
+        if reminder.closed:
+            return
         for priority in self.priorities:
             if priority.applies(reminder) and \
                 (0 <= time_difference.total_seconds() <= 60*60 or ignorets):

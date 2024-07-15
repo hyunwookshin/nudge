@@ -10,3 +10,5 @@ class RemindJob():
         reminders = self.datasource.loadReminders()
         for reminder in reminders:
             self.actions.actuate(reminder, ignorets, dryrun)
+
+        self.datasource.storeReminders(reminders)
