@@ -24,6 +24,7 @@ class Config():
         self.email = Email(info["Email"])
         self.store_path = os.getenv("NUDGE_STORE_PATH")
         self.timezone_offset = info["TimeZoneOffset"]
+        self.timezone = info["TimeZone"]
 
     def getEmail(self):
         return self.email
@@ -33,3 +34,6 @@ class Config():
 
     def getTimeZoneOffset(self):
         return self.timezone_offset
+
+    def getTimeZone(self):
+        return self.timezone

@@ -3,6 +3,7 @@
 import argparse
 import yaml
 import os
+import pytz
 
 from datetime import datetime, timedelta, timezone
 from data import yamldatasource
@@ -27,9 +28,16 @@ def main(args):
     date = input("Enter date (YYYY-MM-DD):")
     time = input("Enter time (HH:MM:SS):")
 
-    offset = timedelta(hours=cfg.getTimeZoneOffset())
-    localtime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(offset))
-    utc_time = localtime.astimezone(timezone.utc)
+    if cfg.getTimeZone():
+        local = pytz.timezone(cfg.getTimeZone())
+        defaulttime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S")
+        localtime = local.localize(defaulttime)
+        utc_time = localtime.astimezone(pytz.utc)
+    else:
+        # TimeZone not set fall back to offset
+        offset = timedelta(hours=cfg.getTimeZoneOffset())
+        localtime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(offset))
+        utc_time = localtime.astimezone(timezone.utc)
 
     info["Time"] = utc_time.strftime("%Y-%m-%d %H:%M:%S")
 
