@@ -1,0 +1,6 @@
+- Title: Some appointment
+  Description: some appointment reminder
+  Time: "2024-07-16 17:00:00"
+  Link: www.google.com
+  Closed: false
+  Priority: 1

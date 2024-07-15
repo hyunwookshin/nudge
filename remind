@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+import argparse
+import yaml
+import os
+
+from datetime import datetime, timedelta, timezone
+from data import yamldatasource
+from models import reminder, config
+
+def parseArgs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument( "-d", "--dryrun", required=False, action='store_true')
+    return parser.parse_args()
+
+def main(args):
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    datasource = yamldatasource.YamlDataSource(cfg)
+    reminders = datasource.loadReminders()
+    info = {}
+    info["Title"] = input("Enter title:")
+    info["Description"] = input("Enter description:")
+    date = input("Enter date (YYYY-MM-DD):")
+    time = input("Enter time (HH:MM:SS):")
+
+    offset = timedelta(hours=cfg.getTimeZoneOffset())
+    localtime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(offset))
+    utc_time = localtime.astimezone(timezone.utc)
+
+    info["Time"] = utc_time.strftime("%Y-%m-%d %H:%M:%S")
+
+    info["Link"] = input("Enter link:")
+    info["Priority"] = int(input("Enter Priority (0-3):"))
+    info["Closed"] = False
+    r = reminder.Reminder(info)
+    if args.dryrun:
+        yaml.safe_dump(info, default_flow_style=False, indent=4)
+
+    reminders.append(r)
+    datasource.storeReminders(reminders)
+
+if __name__ == "__main__":
+    args = parseArgs()
+    main(args)

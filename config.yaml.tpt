@@ -1,0 +1,5 @@
+Email:
+   Sender : someemail@gmail.com # save password to /tmp/pass
+   RecepientLow : somerecepient@gmail.com
+   RecepientHigh : anotherecepient@gmail.com
+TimeZoneOffset : 0
