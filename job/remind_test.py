@@ -16,7 +16,7 @@ class TestReminder():
         self.actuated = False
 
 class TestActions():
-    def actuate(self, reminder, dryrun=False):
+    def actuate(self, reminder, ignoretes=False, dryrun=False):
         reminder.actuated = True
 
 class TestRemind(unittest.TestCase):

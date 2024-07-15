@@ -82,9 +82,26 @@ class TestActions(unittest.TestCase):
         action = priority.getActions()[0]
         self.assertEqual(action.actuated, True)
 
+    def test_multiple_actions(self):
+        action1 = TestAction()
+        action2 = TestAction()
+        priority = TestPriority([action1, action2])
+        priorities = [priority]
+        actions = acts.Actions(priorities)
+        self.assertEqual(action1.actuated, False)
+        self.assertEqual(action2.actuated, False)
+        r.time = actions.getCurrentUTCTime() + timedelta(minutes=1)
+        actions.actuate(r)
+
+        self.assertEqual(action1.actuated, True)
+        self.assertEqual(action2.actuated, True)
+
 class TestPriority:
-    def __init__(self):
-        self.actions = [TestAction()]
+    def __init__(self, actions=None):
+        if not actions:
+            self.actions = [TestAction()]
+        else:
+            self.actions = actions
 
     def applies(self, reminder):
         return True
