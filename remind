@@ -47,6 +47,7 @@ def main(args):
     r = reminder.Reminder(info)
     if args.dryrun:
         yaml.safe_dump(info, default_flow_style=False, indent=4)
+        return
 
     reminders.append(r)
     datasource.storeReminders(reminders)
