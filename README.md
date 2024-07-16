@@ -117,3 +117,9 @@ make job-dry-all
 ```
 ./commit.sh
 ```
+
+### Configuring android cllient
+
+```
+make config
+```
