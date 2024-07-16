@@ -30,3 +30,6 @@ job-dry:
 
 job-dry-all:
 	NUDGE_STORE_PATH=$(NUDGE_STORE_PATH) NUDGE_CONFIG_PATH=$(NUDGE_CONFIG_PATH) NUDGE_EMAIL_PASSWD=$(NUDGE_EMAIL_PASSWD) PYTHONPATH=$(PYTHONPATH) make -C job dryrun-all
+
+config:
+	make -C client/android config

@@ -111,3 +111,9 @@ make job-dry-all
 ```
 */10 * * * * cd ~/wses/nudge && make job
 ```
+
+### Committing
+
+```
+./commit.sh
+```

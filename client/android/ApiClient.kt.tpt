@@ -9,7 +9,7 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 object ApiClient {
-    private const val BASE_URL = FILL_IN_HOSTNAME
+    private const val BASE_URL = "FILL_IN_HOSTNAME"
 
     private var retrofit: Retrofit? = null
 
