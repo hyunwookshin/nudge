@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Nudge</string>
+    <string name="title_activity_main">Nudge</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="title_fragment_reminder">Add Reminder</string>
+    <string-array name="priority_array">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+        <item>Very High</item>
+    </string-array>
+</resources>
