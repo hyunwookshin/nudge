@@ -105,3 +105,9 @@ To dryrun all reminders,
 ```
 make job-dry-all
 ```
+
+### cron job
+
+```
+*/10 * * * * cd ~/wses/nudge && make job
+```
