@@ -119,6 +119,11 @@ class ReminderFragment : Fragment() {
 
         val reminder = Reminder(title, description, date, time, link, priority, key)
         sendReminder(reminder)
+
+        // Clear all text fields except password
+        titleEditText.text.clear()
+        descriptionEditText.text.clear()
+        linkEditText.text.clear()
     }
 
     private fun sendReminder(reminder: Reminder) {
