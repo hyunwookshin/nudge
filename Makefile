@@ -18,6 +18,7 @@ clean:
 	PYTHONPATH=$(PYTHONPATH) make -C data clean
 	PYTHONPATH=$(PYTHONPATH) make -C actions clean
 	PYTHONPATH=$(PYTHONPATH) make -C job clean
+	PYTHONPATH=$(PYTHONPATH) make -C clients/android clean
 
 job:
 	NUDGE_STORE_PATH=$(NUDGE_STORE_PATH) NUDGE_CONFIG_PATH=$(NUDGE_CONFIG_PATH) NUDGE_EMAIL_PASSWD=$(NUDGE_EMAIL_PASSWD) PYTHONPATH=$(PYTHONPATH) make -C job run
@@ -32,4 +33,5 @@ job-dry-all:
 	NUDGE_STORE_PATH=$(NUDGE_STORE_PATH) NUDGE_CONFIG_PATH=$(NUDGE_CONFIG_PATH) NUDGE_EMAIL_PASSWD=$(NUDGE_EMAIL_PASSWD) PYTHONPATH=$(PYTHONPATH) make -C job dryrun-all
 
 config:
+	touch /tmp/pass
 	make -C client/android config
