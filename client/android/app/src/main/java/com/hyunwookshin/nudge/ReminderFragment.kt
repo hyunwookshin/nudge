@@ -129,6 +129,7 @@ class ReminderFragment : Fragment() {
     private fun sendReminder(reminder: Reminder) {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call = apiService.addReminder(reminder)
+        hideKeyboard()
         call.enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
