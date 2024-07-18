@@ -8,24 +8,30 @@
         android:id="@+id/titleEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="8dp"
         android:hint="Title" />
 
     <EditText
         android:id="@+id/descriptionEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="8dp"
         android:hint="Description" />
 
     <Button
         android:id="@+id/dateButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner"
+        android:layout_margin="4dp"
         android:text="Select Date" />
 
     <Button
         android:id="@+id/timeButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner"
+        android:layout_margin="4dp"
         android:text="Select Time" />
 
     <EditText
@@ -34,6 +40,7 @@
         android:layout_height="wrap_content"
         android:hint="Enter link"
         android:singleLine="true"
+        android:layout_margin="8dp"
         android:imeOptions="actionDone" />
 
     <EditText
@@ -43,18 +50,22 @@
         android:hint="Enter key"
         android:inputType="textPassword"
         android:singleLine="true"
+        android:layout_margin="8dp"
         android:imeOptions="actionDone" />
 
     <Spinner
         android:id="@+id/prioritySpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="8dp"
         android:entries="@array/priority_array" />
 
     <Button
         android:id="@+id/saveButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner"
+        android:layout_margin="4dp"
         android:text="Save" />
 
     <Button
@@ -63,5 +74,6 @@
         android:layout_height="wrap_content"
         android:text="Show Reminders"
         android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_corner"
         android:layout_gravity="center" />
 </LinearLayout>
