@@ -8,3 +8,5 @@ curl -k -X POST https://url/add_reminder \
            "Link": "http://example.com",
            "Priority": 2
          }'
+
+curl -k -X GET https://url/reminders -H Content-Type:application/json
