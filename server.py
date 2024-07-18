@@ -19,6 +19,24 @@ def get_secure_key():
         assert key != "", "Empty Key"
     return key
 
+def getCurrentUTCTime():
+    return datetime.utcnow().replace(tzinfo=timezone.utc)
+
+def recent(reminder):
+    current_utc_time = getCurrentUTCTime()
+    return (reminder.time - current_utc_time).total_seconds() >= 0
+
+@app.route('/reminders', methods=['GET'])
+def get_reminders():
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    datasource = yamldatasource.YamlDataSource(cfg)
+    reminders = datasource.loadReminders()
+    return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
+
 @app.route('/add_reminder', methods=['POST'])
 def add_reminder():
     data = request.json

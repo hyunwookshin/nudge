@@ -50,6 +50,9 @@ curl -k -X POST https://<url>/add_reminder \
       "Link": "http://google.com",
       "Priority": 2
    }'
+
+curl -k -X GET https://<url>/reminders \
+   -H Content-Type:application/json
 ```
 
 This requires the following nginx settings:
@@ -70,6 +73,10 @@ This requires the following nginx settings:
      ssl_prefer_server_ciphers on;
      # Nudge
      location /add_reminder {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+     location /reminders {
          proxy_pass http://127.0.0.1:5000;
          proxy_set_header X-Real-IP $remote_addr;
      }
