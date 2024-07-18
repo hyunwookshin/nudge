@@ -3,6 +3,8 @@
     <string name="title_activity_main">Nudge</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="title_fragment_reminder">Add Reminder</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- TODO: Remove or change this placeholder text -->
     <string-array name="priority_array">
         <item>Very High</item>
         <item>High</item>

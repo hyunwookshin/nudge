@@ -32,6 +32,17 @@ class ReminderFragment : Fragment() {
     private var selectedDate: String? = null
     private var selectedTime: String? = null
 
+    private var callback: ReminderCallback? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ReminderCallback) {
+            callback = context
+        } else {
+            throw RuntimeException("$context must implement ReminderCallback")
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -62,6 +73,16 @@ class ReminderFragment : Fragment() {
             false
         }
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val showRemindersButton: Button = view.findViewById(R.id.showRemindersButton)
+        // Button to show reminders
+        showRemindersButton.setOnClickListener {
+            callback?.onShowReminders()
+        }
     }
 
     private fun showDatePicker() {
@@ -143,5 +164,10 @@ class ReminderFragment : Fragment() {
                 Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
             }
         })
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        callback = null
     }
 }
