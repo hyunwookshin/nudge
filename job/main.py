@@ -23,7 +23,6 @@ def main(args):
     cfg = config.Config(info)
 
     datasource = yamldatasource.YamlDataSource(cfg)
-    reminders = datasource.loadReminders()
     priorities = getPriorities(cfg, args.dryrun)
     actions = Actions(priorities)
 
