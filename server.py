@@ -35,6 +35,15 @@ def get_reminders():
 
     datasource = yamldatasource.YamlDataSource(cfg)
     reminders = datasource.loadReminders()
+    for r in reminders:
+        if cfg.getTimeZone() and False:
+            local_timezone= pytz.timezone(cfg.getTimeZone())
+            r.time = r.time.astimezone(local_timezone)
+        else:
+            # TimeZone not set fall back to offset
+            offset = timedelta(hours=cfg.getTimeZoneOffset())
+            r.time = r.time.astimezone(timezone(offset))
+
     return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
 
 @app.route('/add_reminder', methods=['POST'])
