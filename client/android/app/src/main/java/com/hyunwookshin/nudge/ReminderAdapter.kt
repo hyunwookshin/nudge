@@ -7,10 +7,31 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.hyunwookshin.nudge.ReminderListFragment
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>() {
 
     private var reminders: List<Reminder> = listOf()
+
+    fun convert24HourTo12Hour(time24: String): String {
+        // Define the input format
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        // Define the output format
+        val outputFormat = SimpleDateFormat("MMMM dd, yyyy hh:mm a", Locale.getDefault())
+
+
+        // Parse the input time string
+        val date = inputFormat.parse(time24)
+
+        // Format the date object into the output format
+        return if (date != null) {
+            outputFormat.format(date)
+        } else {
+            ""
+        }
+    }
 
     fun setReminders(reminders: List<Reminder>) {
         this.reminders = reminders.sortedBy { it->it.Time }
@@ -36,7 +57,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
             description.text = reminder.Description
-            time.text = reminder.Time
+            time.text = convert24HourTo12Hour(reminder.Time)
 
             val backgroundColor = if (reminder.Priority <= 1) {
                 ContextCompat.getColor(itemView.context, R.color.high_priority)
