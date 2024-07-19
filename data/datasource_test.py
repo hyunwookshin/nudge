@@ -15,6 +15,7 @@ sample_yaml_data = """
   Link: "http://example.com"
   Closed: false
   Priority: 2
+  Snooze: 0
 """
 
 class TestConfig():
@@ -54,7 +55,8 @@ class TestYamlDataSource(unittest.TestCase):
             "Time": "2024-07-14 10:00:00",
             "Link": "http://example.com",
             "Closed": False,
-            "Priority": 2
+            "Priority": 2,
+            "Snooze": 0,
         })
 
         # Test storing reminders to YAML file

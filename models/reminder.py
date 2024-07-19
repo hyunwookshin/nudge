@@ -10,6 +10,7 @@ class Reminder():
         self.link = info["Link"]
         self.priority = info["Priority"]
         self.closed = info["Closed"]
+        self.snooze = info.get("Snooze", 0)
 
     def toInfo(self):
         info = {
@@ -18,6 +19,7 @@ class Reminder():
             "Time": self.time.strftime("%Y-%m-%d %H:%M:%S"),
             "Link": self.link,
             "Priority": self.priority,
-            "Closed": self.closed
+            "Closed": self.closed,
+            "Snooze": self.snooze
         }
         return info
