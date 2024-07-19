@@ -98,6 +98,7 @@ class TestActions(unittest.TestCase):
 
 class TestPriority:
     def __init__(self, actions=None):
+        self.time_notif_seconds = 60
         if not actions:
             self.actions = [TestAction()]
         else:

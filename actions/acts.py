@@ -15,7 +15,7 @@ class Actions():
             return
         for priority in self.priorities:
             if priority.applies(reminder) and \
-                (0 <= time_difference.total_seconds() <= 60*60 or ignorets):
+                (0 <= time_difference.total_seconds() <= priority.time_notif_seconds or ignorets):
                 for action in priority.getActions():
                     action.actuate(reminder, self.history, dryrun)
                 break

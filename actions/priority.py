@@ -10,8 +10,9 @@ def getPriorities(config, ignorets=False):
             LowPriority(config, ignorets)]
 
 class Priority():
-    def __init__(self, value, actions):
+    def __init__(self, value, actions, notif_time_seconds):
         self.value = value
+        self.notif_time_seconds = notif_time_seconds
         self.actions = actions
 
     def applies(self, reminder):
@@ -23,19 +24,19 @@ class Priority():
 class VeryHighPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(0, [emailaction.EmailAction(config, True, test_server)])
+        super().__init__(0, [emailaction.EmailAction(config, True, test_server)], 60*60)
 
 class HighPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(1, [emailaction.EmailAction(config, True, test_server)])
+        super().__init__(1, [emailaction.EmailAction(config, True, test_server)], 60*60*2)
 
 class MediumPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(2, [emailaction.EmailAction(config, False, test_server)])
+        super().__init__(2, [emailaction.EmailAction(config, False, test_server)], 60*60*3)
 
 class LowPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(3, [emailaction.EmailAction(config, False, test_server)])
+        super().__init__(3, [emailaction.EmailAction(config, False, test_server)], 60*60*24)
