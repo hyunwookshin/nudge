@@ -11,6 +11,9 @@ class TestDataStore():
     def loadReminders(self):
         return self.reminders
 
+    def storeReminders(self, reminders):
+        self.reminders = reminders
+
 class TestReminder():
     def __init__(self):
         self.actuated = False
