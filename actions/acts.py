@@ -18,7 +18,7 @@ class Actions():
                 (0 <= time_difference.total_seconds() <= 60*60 or ignorets):
                 for action in priority.getActions():
                     action.actuate(reminder, self.history, dryrun)
-            break
+                break
 
 class Action():
     def __init__(self):
