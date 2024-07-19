@@ -73,6 +73,7 @@ def add_reminder():
     info["Link"] = data["Link"]
     info["Priority"] = int(data["Priority"])
     info["Closed"] = False
+    info["Snooze"] = data.get("Snooze", 0)
     r = reminder.Reminder(info)
 
     reminders.append(r)
