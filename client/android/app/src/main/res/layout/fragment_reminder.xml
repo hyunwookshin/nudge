@@ -60,6 +60,13 @@
         android:layout_margin="8dp"
         android:entries="@array/priority_array" />
 
+    <Spinner
+        android:id="@+id/snoozeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:entries="@array/snooze_array" />
+
     <Button
         android:id="@+id/saveButton"
         android:layout_width="match_parent"

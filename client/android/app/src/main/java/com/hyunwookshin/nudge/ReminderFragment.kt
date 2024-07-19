@@ -28,6 +28,7 @@ class ReminderFragment : Fragment() {
     private lateinit var prioritySpinner: Spinner
     private lateinit var saveButton: Button
     private lateinit var passwordEditText: EditText
+    private lateinit var snoozeSpinner: Spinner
 
     private var selectedDate: String? = null
     private var selectedTime: String? = null
@@ -56,6 +57,7 @@ class ReminderFragment : Fragment() {
         passwordEditText = view.findViewById(R.id.passwordEditText)
         prioritySpinner = view.findViewById(R.id.prioritySpinner)
         saveButton = view.findViewById(R.id.saveButton)
+        snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
 
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
@@ -132,13 +134,14 @@ class ReminderFragment : Fragment() {
         val date = selectedDate.toString()
         val time = selectedTime.toString()
         val key = passwordEditText.text.toString()
+        val snooze = snoozeSpinner.selectedItemPosition
 
         if (title.isEmpty() || description.isEmpty() || selectedDate == null || selectedTime == null ) {
             Snackbar.make(requireView(), "All fields are required", Snackbar.LENGTH_SHORT).show()
             return
         }
 
-        val reminder = Reminder(title, description, date, time, link, priority, key)
+        val reminder = Reminder(title, description, date, time, link, priority, key, snooze)
         sendReminder(reminder)
 
         // Clear all text fields except password
