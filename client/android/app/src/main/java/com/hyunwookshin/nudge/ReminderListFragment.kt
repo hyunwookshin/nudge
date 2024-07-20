@@ -1,26 +1,51 @@
 package com.hyunwookshin.nudge
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ProgressBar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Callback
 import retrofit2.Response
 import com.google.android.material.snackbar.Snackbar
 import retrofit2.Call
+import java.util.Calendar
 
 class ReminderListFragment : Fragment() {
 
     private lateinit var reminderAdapter: ReminderAdapter
+    private lateinit var dateButton: Button
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_reminder_list, container, false)
+        val view = inflater.inflate(R.layout.fragment_reminder_list, container, false)
+        dateButton = view.findViewById(R.id.dateButton)
+        dateButton.setOnClickListener { showDatePicker() }
+        progressBar = view.findViewById(R.id.progressBar)
+        val calendar = Calendar.getInstance()
+        val todayDate = "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.YEAR)}"
+        dateButton.text = "Show Calendar (" + todayDate + ")"
+        return view
+    }
+
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance()
+        val datePicker = DatePickerDialog(
+            requireContext(),
+            { _, _, _, _ -> },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePicker.show()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -30,7 +55,7 @@ class ReminderListFragment : Fragment() {
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
-
+        progressBar.visibility = View.VISIBLE
         fetchReminders()
     }
 
@@ -41,6 +66,7 @@ class ReminderListFragment : Fragment() {
                 if (response.isSuccessful) {
                     response.body()?.reminders?.let { reminders ->
                         reminderAdapter.setReminders(reminders)
+                        progressBar.visibility = View.GONE
                     }
                 } else {
                     Snackbar.make(requireView(), "Failed to load reminders", Snackbar.LENGTH_SHORT).show()
