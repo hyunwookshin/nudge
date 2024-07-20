@@ -24,8 +24,9 @@ class Action():
     def __init__(self):
         pass
 
-    def actuate(self, reminder):
+    def actuate(self, reminder, history=None, dryrun=False):
         if reminder.snooze > 0:
             reminder.snooze -= 1
             reminder.priority = max(0, reminder.priority - 2)
+            return
         reminder.closed = True

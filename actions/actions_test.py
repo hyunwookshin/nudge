@@ -96,6 +96,35 @@ class TestActions(unittest.TestCase):
         self.assertEqual(action1.actuated, True)
         self.assertEqual(action2.actuated, True)
 
+    def test_snoozing(self):
+        action1 = acts.Action()
+        priority = TestPriority([action1])
+        priorities = [priority]
+        actions = acts.Actions(priorities)
+        action = priority.getActions()[0]
+        snoozable_reminder = reminder.Reminder({
+            "Title": "some title",
+            "Description": "some description",
+            "Time": "2024-01-01 12:00:00",
+            "Link": "https://google.com",
+            "Priority": 1,
+            "Closed": False,
+            "Snooze": 1
+        })
+        snoozable_reminder.time = actions.getCurrentUTCTime() + timedelta(minutes=1)
+
+        self.assertEqual(snoozable_reminder.snooze, 1)
+
+        actions.actuate(snoozable_reminder)
+
+        self.assertEqual(snoozable_reminder.snooze, 0)
+        self.assertEqual(snoozable_reminder.closed, False)
+
+        actions.actuate(snoozable_reminder)
+
+        self.assertEqual(snoozable_reminder.snooze, 0)
+        self.assertEqual(snoozable_reminder.closed, True)
+
 class TestPriority:
     def __init__(self, actions=None):
         self.time_notif_seconds = 60
