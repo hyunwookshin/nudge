@@ -16,7 +16,7 @@ class Priority():
         self.actions = actions
 
     def applies(self, reminder):
-        return self.value >= reminder.priority
+        return self.value == reminder.priority
 
     def getActions(self):
         return self.actions
