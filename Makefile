@@ -13,11 +13,13 @@ test:
 	PYTHONPATH=$(PYTHONPATH) make -C data test
 	PYTHONPATH=$(PYTHONPATH) make -C actions test
 	PYTHONPATH=$(PYTHONPATH) make -C job test
+	PYTHONPATH=$(PYTHONPATH) make -C spell test
 
 clean:
 	PYTHONPATH=$(PYTHONPATH) make -C data clean
 	PYTHONPATH=$(PYTHONPATH) make -C actions clean
 	PYTHONPATH=$(PYTHONPATH) make -C job clean
+	PYTHONPATH=$(PYTHONPATH) make -C spell clean
 	PYTHONPATH=$(PYTHONPATH) make -C client/android clean
 
 job:

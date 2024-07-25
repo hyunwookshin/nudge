@@ -7,6 +7,7 @@ import yaml
 import os
 from waitress import serve
 
+from spell import spell
 from models import reminder, config
 from data import yamldatasource
 
@@ -57,10 +58,11 @@ def add_reminder():
 
     datasource = yamldatasource.YamlDataSource(cfg)
     reminders = datasource.loadReminders()
+    speller = spell.CustomSpeller()
 
     info = {}
-    info["Title"] = data["Title"]
-    info["Description"] = data["Description"]
+    info["Title"] = speller.spell(data["Title"])
+    info["Description"] = speller.spell(data["Description"])
     date = data["Date"]
     time = data["Time"]
     secureKey = data["Key"]

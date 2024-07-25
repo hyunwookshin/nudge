@@ -8,6 +8,7 @@ pip3 install pyyaml
 pip3 install pytz
 pip3 install flask
 pip3 install waitress
+pip3 install autocorrect
 ```
 
 ## Set up
