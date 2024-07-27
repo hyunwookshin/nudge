@@ -21,7 +21,7 @@ class Reminder():
             "Title": self.title,
             "Description": self.description,
             "Time": self.time.strftime("%Y-%m-%d %H:%M:%S"),
-            "Read": self.read,
+            "Read": self.read.strftime("%Y-%m-%d %H:%M:%S"),
             "Link": self.link,
             "Priority": self.priority,
             "Closed": self.closed,
