@@ -40,10 +40,12 @@ def get_reminders():
         if cfg.getTimeZone() and False:
             local_timezone= pytz.timezone(cfg.getTimeZone())
             r.time = r.time.astimezone(local_timezone)
+            r.read = r.read.astimezone(local_timezone)
         else:
             # TimeZone not set fall back to offset
             offset = timedelta(hours=cfg.getTimeZoneOffset())
             r.time = r.time.astimezone(timezone(offset))
+            r.read = r.read.astimezone(timezone(offset))
 
     return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
 
