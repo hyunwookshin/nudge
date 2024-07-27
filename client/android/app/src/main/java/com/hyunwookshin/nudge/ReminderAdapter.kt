@@ -21,7 +21,6 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         // Define the output format
         val outputFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy hh:mm a", Locale.getDefault())
 
-
         // Parse the input time string
         val date = inputFormat.parse(time24)
 
@@ -53,12 +52,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val title: TextView = itemView.findViewById(R.id.title)
         private val description: TextView = itemView.findViewById(R.id.description)
         private val time: TextView = itemView.findViewById(R.id.time)
+        private val read: TextView = itemView.findViewById(R.id.read)
 
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
             description.text = reminder.Description
             time.text = convert24HourTo12Hour(reminder.Time)
-
+            if (reminder.Read.isEmpty()) {
+                read.text = "(Not read)";
+            } else {
+                read.text = "Verified: " + convert24HourTo12Hour(reminder.Read)
+            }
             val backgroundColor = if (reminder.Priority <= 1) {
                 ContextCompat.getColor(itemView.context, R.color.high_priority)
             } else {

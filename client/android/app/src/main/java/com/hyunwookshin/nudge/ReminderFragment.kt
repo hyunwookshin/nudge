@@ -133,6 +133,7 @@ class ReminderFragment : Fragment() {
         val priority = prioritySpinner.selectedItemPosition
         val date = selectedDate.toString()
         val time = selectedTime.toString()
+        val read = selectedTime.toString()
         val key = passwordEditText.text.toString()
         val snooze = snoozeSpinner.selectedItemPosition
 
@@ -141,7 +142,7 @@ class ReminderFragment : Fragment() {
             return
         }
 
-        val reminder = Reminder(title, description, date, time, link, priority, key, snooze)
+        val reminder = Reminder(title, description, date, time, link, priority, key, snooze, read)
         sendReminder(reminder)
 
         // Clear all text fields except password

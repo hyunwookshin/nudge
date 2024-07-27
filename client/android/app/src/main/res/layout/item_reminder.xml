@@ -31,4 +31,12 @@
         android:text="Time"
         android:textColor="@color/black"
         android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/read"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read Time"
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="12sp" />
 </LinearLayout>

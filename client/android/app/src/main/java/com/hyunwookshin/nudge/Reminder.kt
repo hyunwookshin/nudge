@@ -8,5 +8,6 @@ data class Reminder(
     val Link: String,
     val Priority: Int,
     val Key: String,
-    val Snooze: Int
+    val Snooze: Int,
+    val Read: String,
 )
