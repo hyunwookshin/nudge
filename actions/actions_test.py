@@ -29,6 +29,7 @@ r = reminder.Reminder({
     "Title": "some title",
     "Description": "some description",
     "Time": "2024-01-01 12:00:00",
+    "Read": "2024-01-01 12:00:00",
     "Link": "https://google.com",
     "Priority": 1,
     "Closed": False
@@ -106,6 +107,7 @@ class TestActions(unittest.TestCase):
             "Title": "some title",
             "Description": "some description",
             "Time": "2024-01-01 12:00:00",
+            "Read": "2024-01-01 12:00:00",
             "Link": "https://google.com",
             "Priority": 1,
             "Closed": False,
