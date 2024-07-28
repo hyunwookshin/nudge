@@ -11,8 +11,11 @@ class Reminder():
         self.priority = info["Priority"]
         self.closed = info["Closed"]
         self.snooze = info.get("Snooze", 0)
-        timestamp_str = info.get("Read", self.get_current_utc())
+        timestamp_str = info.get("Read", info["Time"])
         self.read = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) 
+
+    def updateRead(self):
+        self.read = self.get_current_utc()
 
     def get_current_utc(self):
         return datetime.utcnow().replace(tzinfo=timezone.utc)
