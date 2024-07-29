@@ -24,17 +24,17 @@ class Priority():
 class VeryHighPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(0, [emailaction.EmailAction(config, True, test_server)], 60*60)
+        super().__init__(0, [emailaction.EmailAction(config, True, test_server)], 60*60*2)
 
 class HighPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(1, [emailaction.EmailAction(config, True, test_server)], 60*60*2)
+        super().__init__(1, [emailaction.EmailAction(config, True, test_server)], 60*60)
 
 class MediumPriority(Priority):
     def __init__(self, config, ignorets=False):
         test_server = FakeServer() if ignorets else None
-        super().__init__(2, [emailaction.EmailAction(config, False, test_server)], 60*60*3)
+        super().__init__(2, [emailaction.EmailAction(config, False, test_server)], 60*60*6)
 
 class LowPriority(Priority):
     def __init__(self, config, ignorets=False):
