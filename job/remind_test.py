@@ -18,6 +18,9 @@ class TestReminder():
     def __init__(self):
         self.actuated = False
 
+    def updateRead(self):
+        pass
+
 class TestActions():
     def actuate(self, reminder, ignoretes=False, dryrun=False):
         reminder.actuated = True
