@@ -20,8 +20,9 @@ import java.util.*
 
 class ReminderFragment : Fragment() {
 
-    private lateinit var titleEditText: EditText
-    private lateinit var descriptionEditText: EditText
+    private lateinit var titleEditText: AutoCompleteTextView
+    private lateinit var descriptionEditText: AutoCompleteTextView
+    private lateinit var reminders: List<Reminder>
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
     private lateinit var linkEditText: EditText
@@ -74,6 +75,7 @@ class ReminderFragment : Fragment() {
             }
             false
         }
+        fetchReminders()
         return view
     }
 
@@ -173,5 +175,36 @@ class ReminderFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
         callback = null
+    }
+
+    private fun fetchReminders() {
+        val apiService = ApiClient.getClient().create(ApiService::class.java)
+        val call = apiService.getReminders()
+
+        call.enqueue(object : Callback<ReminderResponse> {
+            override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
+                if (response.isSuccessful) {
+                    reminders = response.body()?.reminders ?: emptyList()
+                    setupAutoComplete()
+                } else {
+                    Snackbar.make(requireView(), "Failed to fetch reminders", Snackbar.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
+                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun setupAutoComplete() {
+        val titles = reminders.map { it.Title }.distinct()
+        val descriptions = reminders.map { it.Description }.distinct()
+
+        val titleAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, titles)
+        val descriptionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, descriptions)
+
+        titleEditText.setAdapter(titleAdapter)
+        descriptionEditText.setAdapter(descriptionAdapter)
     }
 }
