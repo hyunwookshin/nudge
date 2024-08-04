@@ -75,7 +75,7 @@ class ReminderFragment : Fragment() {
             }
             false
         }
-        fetchReminders()
+        fetchAllReminders()
         return view
     }
 
@@ -177,9 +177,9 @@ class ReminderFragment : Fragment() {
         callback = null
     }
 
-    private fun fetchReminders() {
+    private fun fetchAllReminders() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
-        val call = apiService.getReminders()
+        val call = apiService.getAllReminders()
 
         call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
