@@ -1,3 +1,18 @@
+# Nudge App
+
+## App Details
+
+Simple reminder/notification app for everyday use.
+
+- Create a reminder
+- Set priority and time to be reminded
+- Check future reminders
+- Get reminders via email/SMS
+
+### Screenshots
+
+<img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.jpg?raw=true" alt="Screenshot of the reminder page" width="250"/>
+<img src="https://github.com/hyunwookshin/nudge/blob/main/images/schedule_screenshot.jpg?raw=true" alt="Screenshot of the reminders/schedule page" width="250"/>
 
 ## Dependency
 
