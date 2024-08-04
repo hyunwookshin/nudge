@@ -30,6 +30,7 @@ def recent(reminder):
 @app.route('/reminders', methods=['GET'])
 def get_reminders():
     configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    include = request.args.get("include", "none")
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
@@ -47,6 +48,8 @@ def get_reminders():
             r.time = r.time.astimezone(timezone(offset))
             r.read = r.read.astimezone(timezone(offset))
 
+    if include == "all":
+        return jsonify({ "reminders" : [ r.toInfo() for r in reminders ] }), 200
     return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
 
 @app.route('/add_reminder', methods=['POST'])
