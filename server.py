@@ -37,7 +37,7 @@ def get_reminders():
     datasource = yamldatasource.YamlDataSource(cfg)
     reminders = datasource.loadReminders()
     for r in reminders:
-        if cfg.getTimeZone() and False:
+        if cfg.getTimeZone():
             local_timezone= pytz.timezone(cfg.getTimeZone())
             r.time = r.time.astimezone(local_timezone)
             r.read = r.read.astimezone(local_timezone)
