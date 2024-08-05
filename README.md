@@ -4,45 +4,23 @@
 
 Simple reminder/notification app for everyday use.
 
+### Work flow
+
 - Create a reminder
 - Set priority and time to be reminded
 - Check future reminders
-- Get reminders via email/SMS
+- Get reminders via email/SMS depending on the priorities
 
 ### Screenshots
 
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.jpg?raw=true" alt="Screenshot of the reminder page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/schedule_screenshot.jpg?raw=true" alt="Screenshot of the reminders/schedule page" width="250"/>
 
-## Dependency
-
-```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3 get-pip.py
-pip3 install pyyaml
-pip3 install pytz
-pip3 install flask
-pip3 install waitress
-pip3 install autocorrect
-```
-
-## Set up
-
-### Set up the config
-
-- Fill out `config.yaml.tpt` and save it as `config.yaml`, by running `make all`
-- Fill out `store/reminders.yaml.tpt` and save it as `config.yaml`, by running `make all`
-
-### Activating Sender Email
-
-Refer to https://www.youtube.com/watch?v=Y_u5KIeXiVI
-
-- Go to "Manage account" under Account Mavatar
-- Click on Security, and set up Two-Factor-Authentication (Required)
-- Then search for "App Password"
-- Use "Nudge" as the app name
-
 ## Adding new reminders
+
+### Via App
+
+Build and install the android app, and create reminder directly from the app.
 
 ### Via CLI
 
@@ -70,6 +48,36 @@ curl -k -X POST https://<url>/add_reminder \
 curl -k -X GET https://<url>/reminders \
    -H Content-Type:application/json
 ```
+
+## Set up
+
+### Dependency
+
+```
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python3 get-pip.py
+pip3 install pyyaml
+pip3 install pytz
+pip3 install flask
+pip3 install waitress
+pip3 install autocorrect
+```
+
+### Set up the config
+
+- Fill out `config.yaml.tpt` and save it as `config.yaml`, by running `make all`
+- Fill out `store/reminders.yaml.tpt` and save it as `config.yaml`, by running `make all`
+
+### Activating Sender Email
+
+Refer to https://www.youtube.com/watch?v=Y_u5KIeXiVI
+
+- Go to "Manage account" under Account Mavatar
+- Click on Security, and set up Two-Factor-Authentication (Required)
+- Then search for "App Password"
+- Use "Nudge" as the app name
+
+## Server Config
 
 This requires the following nginx settings:
 
