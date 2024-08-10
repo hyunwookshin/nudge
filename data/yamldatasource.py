@@ -19,6 +19,17 @@ class YamlDataSource:
         return [ reminder.Reminder(info) for info in infos ]
 
     def storeReminders(self, reminders):
+        reminders.sort(key=lambda x:x.time, reverse=True)
+        filtered = []
+        unclosed = set()
+        for reminder in reminders:
+            if not reminder.closed:
+                if reminder.title in unclosed:
+                    continue
+                unclosed.add(reminder.title)
+            filtered.append(reminder)
+
+        reminders = filtered[::-1]
         with open(self.getYamlReminderPath(), "w") as f:
             infos = yaml.safe_dump([r.toInfo() for r in reminders],
                     default_flow_style=False, indent=4)
