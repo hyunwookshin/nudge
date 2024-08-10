@@ -1,0 +1,12 @@
+<resources>
+    <color name="colorPrimary">#063C6A</color>
+    <color name="colorPrimaryDark">#3E87DA</color>
+    <color name="colorAccent">#B0B0B0</color>
+    <color name="colorBackground">#0A4747</color>
+    <color name="colorTextPrimary">#F8F8F8</color>
+    <color name="colorTextSecondary">#BDB5B5</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="high_priority">#C1616A</color>
+    <color name="low_priority">#5C5A5A</color>
+</resources>
