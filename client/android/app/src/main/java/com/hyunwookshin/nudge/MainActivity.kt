@@ -25,6 +25,13 @@ class MainActivity : AppCompatActivity(), ReminderCallback {
     override fun onShowReminders() {
         replaceFragment(ReminderListFragment())
     }
+    override fun onEditReminder(reminder: Reminder) {
+        val reminderFragment = ReminderFragment.newInstance(reminder)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, reminderFragment)
+            .addToBackStack(null)
+            .commit()
+    }
 
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()

@@ -1,7 +1,9 @@
 package com.hyunwookshin.nudge
 
 import android.app.DatePickerDialog
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +23,7 @@ class ReminderListFragment : Fragment() {
     private lateinit var reminderAdapter: ReminderAdapter
     private lateinit var dateButton: Button
     private lateinit var progressBar: ProgressBar
+    private var reminderCallback: ReminderCallback? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,10 +51,25 @@ class ReminderListFragment : Fragment() {
         datePicker.show()
     }
 
+    // Set MainActivity as the callback
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ReminderCallback) {
+            reminderCallback = context
+        } else {
+            throw RuntimeException("$context must implement ReminderCallback")
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        reminderAdapter = ReminderAdapter()
+        // Ensure that the Edit button is wired to the callback in MainActivity.
+        reminderAdapter = ReminderAdapter().apply {
+            reminderCallback?.let {
+                setReminderCallback(it)
+            }
+        }
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
@@ -65,6 +83,8 @@ class ReminderListFragment : Fragment() {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
                 if (response.isSuccessful) {
                     response.body()?.reminders?.let { reminders ->
+                        Log.d("ReminderListFragment", "Reminders fetched: ${reminders.size}")
+
                         reminderAdapter.setReminders(reminders)
                         progressBar.visibility = View.GONE
                     }

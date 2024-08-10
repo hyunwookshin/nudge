@@ -35,6 +35,17 @@ class ReminderFragment : Fragment() {
     private var selectedTime: String? = null
 
     private var callback: ReminderCallback? = null
+    companion object {
+        private const val ARG_REMINDER = "reminder"
+
+        fun newInstance(reminder: Reminder): ReminderFragment {
+            val fragment = ReminderFragment()
+            val args = Bundle()
+            args.putParcelable(ARG_REMINDER, reminder)
+            fragment.arguments = args
+            return fragment
+        }
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -75,6 +86,19 @@ class ReminderFragment : Fragment() {
             }
             false
         }
+
+        val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
+
+        // Prepopulation when user clicks "Edit" from the list view.
+        reminder?.let {
+            // Prepopulate the fields with the reminder data
+            titleEditText.setText(it.Title)
+            descriptionEditText.setText(it.Description)
+            linkEditText.setText(it.Link)
+            prioritySpinner.setSelection(it.Priority)
+            // Add more fields as necessary
+        }
+
         fetchAllReminders()
         return view
     }

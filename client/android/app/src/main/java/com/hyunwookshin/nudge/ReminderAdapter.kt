@@ -3,6 +3,7 @@ package com.hyunwookshin.nudge
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -13,6 +14,7 @@ import java.util.Locale
 class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>() {
 
     private var reminders: List<Reminder> = listOf()
+    private var reminderCallback: ReminderCallback? = null
 
     fun convert24HourTo12Hour(time24: String): String {
         // Define the input format
@@ -36,7 +38,9 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         this.reminders = reminders.sortedBy { it->it.Time }
         notifyDataSetChanged()
     }
-
+    fun setReminderCallback(callback: ReminderCallback) {
+        this.reminderCallback = callback
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReminderViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_reminder, parent, false)
         return ReminderViewHolder(view)
@@ -53,6 +57,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val description: TextView = itemView.findViewById(R.id.description)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val read: TextView = itemView.findViewById(R.id.read)
+        val editButton: Button = itemView.findViewById(R.id.editButton)
 
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
@@ -67,6 +72,9 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 ContextCompat.getColor(itemView.context, R.color.high_priority)
             } else {
                 ContextCompat.getColor(itemView.context, R.color.low_priority)
+            }
+            editButton.setOnClickListener {
+                reminderCallback?.onEditReminder(reminder)
             }
             itemView.setBackgroundColor(backgroundColor)
         }
