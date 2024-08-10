@@ -19,7 +19,7 @@ class YamlDataSource:
         return [ reminder.Reminder(info) for info in infos ]
 
     def storeReminders(self, reminders):
-        reminders.sort(key=lambda x:x.time, reverse=True)
+        reminders = reminders[::-1]
         filtered = []
         unclosed = set()
         for reminder in reminders:
