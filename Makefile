@@ -37,3 +37,6 @@ job-dry-all:
 config:
 	touch /tmp/pass
 	make -C client/android config
+
+backup:
+	./backup.sh # create one
