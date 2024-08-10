@@ -15,6 +15,7 @@ Simple reminder/notification app for everyday use.
 
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.jpg?raw=true" alt="Screenshot of the reminder page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/schedule_screenshot.jpg?raw=true" alt="Screenshot of the reminders/schedule page" width="250"/>
+<img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_screenshot.jpg?raw=true" alt="Screenshot of the reminders page" width="250"/>
 
 ## Adding new reminders
 
