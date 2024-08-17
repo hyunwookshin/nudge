@@ -86,6 +86,7 @@ class ReminderFragment : Fragment() {
             }
             false
         }
+        passwordEditText.setText(ApiKey.key)
 
         val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
 

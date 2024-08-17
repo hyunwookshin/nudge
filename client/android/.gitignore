@@ -14,3 +14,4 @@
 .cxx
 local.properties
 nudge_hostname
+nudge_api_key

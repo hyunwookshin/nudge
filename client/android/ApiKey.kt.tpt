@@ -1,0 +1,7 @@
+package com.hyunwookshin.nudge
+
+class ApiKey {
+    companion object {
+        const val key: String = "FILL_IN_API_KEY"
+    }
+}
