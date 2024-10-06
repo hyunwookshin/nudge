@@ -111,7 +111,7 @@ This requires the following nginx settings:
 And run the server
 
 ```
-NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=config.yaml ./server.py
+NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=./config.yaml ./server.py
 ```
 
 The `NUDGE_SERVER_SECURE_PATH` should be where the secure key is stored.
