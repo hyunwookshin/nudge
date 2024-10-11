@@ -52,6 +52,14 @@ def get_reminders():
         return jsonify({ "reminders" : [ r.toInfo() for r in reminders ] }), 200
     return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
 
+def replaceWords(speller, string, preservedWords):
+    tokens = string.split()
+    for i in range(len(tokens)):
+        if tokens[i].lower() in preservedWords:
+            continue
+        tokens[i] = speller.spell(tokens[i])
+    return " ".join(tokens)
+
 @app.route('/add_reminder', methods=['POST'])
 def add_reminder():
     data = request.json
@@ -66,8 +74,8 @@ def add_reminder():
     speller = spell.CustomSpeller()
 
     info = {}
-    info["Title"] = speller.spell(data["Title"])
-    info["Description"] = speller.spell(data["Description"])
+    info["Title"] = replaceWords(speller, data["Title"], cfg.getPreservedWords())
+    info["Description"] = replaceWords(speller, data["Description"], cfg.getPreservedWords())
     date = data["Date"]
     time = data["Time"]
     secureKey = data["Key"]
