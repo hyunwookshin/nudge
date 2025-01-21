@@ -70,3 +70,63 @@ button:hover {
   font-size: 14px;
   color: #00bcd4;
 }
+
+/* Styling for the reminder cards */
+#reminderContainer {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.reminder-card {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+}
+
+.reminder-card strong {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.reminder-card em {
+  font-style: italic;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.reminder-card p {
+  margin-bottom: 10px;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  border-radius: 5px;
+}
+
+.priority-badge[style*="darkred"] {
+  background-color: darkred; /* Very High Priority */
+}
+
+.priority-badge[style*="red"] {
+  background-color: red; /* High Priority */
+}
+
+.priority-badge[style*="yellow"] {
+  background-color: yellow; /* Medium Priority */
+  color: black; /* Adjust text color for readability */
+}
+
+.priority-badge[style*="green"] {
+  background-color: green; /* Low Priority */
+}
+
