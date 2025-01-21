@@ -1,0 +1,49 @@
+document.getElementById('reminderForm').addEventListener('submit', async function (event) {
+  event.preventDefault();
+
+  const title = document.getElementById('title').value;
+  const description = document.getElementById('description').value;
+  const priority = document.getElementById('priority').value;
+  const key = document.getElementById('key').value;
+  const dateTime = document.getElementById('dateTime').value; // Input in format YYYY-MM-DDTHH:mm
+
+  if (!dateTime) {
+     document.getElementById('response').innerText = 'Please select a date and time.';
+     return;
+  }
+
+  // Split date and time
+  const [date, time] = dateTime.split('T');
+
+
+  // Ensure time includes seconds
+  const timeWithSeconds = `${time}:00`;
+
+  try {
+    const response = await fetch('FILL_IN_HOSTNAME' + "/add_reminder", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Title: title,
+        Description: description,
+        Date: date,
+        Time: timeWithSeconds,
+        Priority: parseInt(priority, 10),
+        Key: key,
+        Link: '',
+      }),
+    });
+
+    if (response.ok) {
+      document.getElementById('response').innerText = 'Reminder uploaded successfully!';
+    } else {
+      document.getElementById('response').innerText = 'Failed to upload reminder.';
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    document.getElementById('response').innerText = 'Network error.';
+  }
+});
+

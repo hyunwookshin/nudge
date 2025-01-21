@@ -105,6 +105,11 @@ This requires the following nginx settings:
          proxy_pass http://127.0.0.1:5000;
          proxy_set_header X-Real-IP $remote_addr;
      }
+     # For desktop browser access
+     location ^~ /public/nudge/web/ {
+         auth_basic "Restricted Content";
+         auth_basic_user_file /etc/nginx/.htpasswd;
+     }
 }
 ```
 
@@ -150,8 +155,13 @@ make job-dry-all
 ./commit.sh
 ```
 
-### Configuring android cllient
+### Configuring android and web clients
+
+You need to set `nudge_hostname` and `nudge_api_key` in `client/android`
+and `client/web` (only hostname).
 
 ```
+echo "https://<hostname>.com" > client/android/nudge_hostname
+...
 make config
 ```

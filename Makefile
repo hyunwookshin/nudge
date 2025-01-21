@@ -21,6 +21,7 @@ clean:
 	PYTHONPATH=$(PYTHONPATH) make -C job clean
 	PYTHONPATH=$(PYTHONPATH) make -C spell clean
 	PYTHONPATH=$(PYTHONPATH) make -C client/android clean
+	PYTHONPATH=$(PYTHONPATH) make -C client/web clean
 
 job:
 	NUDGE_STORE_PATH=$(NUDGE_STORE_PATH) NUDGE_CONFIG_PATH=$(NUDGE_CONFIG_PATH) NUDGE_EMAIL_PASSWD=$(NUDGE_EMAIL_PASSWD) PYTHONPATH=$(PYTHONPATH) make -C job run
@@ -37,6 +38,11 @@ job-dry-all:
 config:
 	touch /tmp/pass
 	make -C client/android config
+	make -C client/web config
+
+config-web:
+	touch /tmp/pass
+	make -C client/web config
 
 backup:
 	./backup.sh # create one

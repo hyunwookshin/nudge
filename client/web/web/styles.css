@@ -1,0 +1,48 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 80%;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input, textarea, select, button {
+  width: 80%;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  background-color: cyan;
+  color: blue;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: cyan;
+}
+
+#response {
+  text-align: center;
+  color: cyan;
+}
