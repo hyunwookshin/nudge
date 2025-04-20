@@ -1,0 +1,20 @@
+[Unit]
+Description=Nudge Service
+After=network.target
+
+[Service]
+Type=simple
+User=hshin
+Restart=always
+RestartSec=5
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/path/to/nudge
+Environment=NUDGE_STORE_PATH=.
+Environment=NUDGE_SECURE_KEY_PATH=/path/to/secure.key
+Environment=NUDGE_CONFIG_PATH=./config.yaml
+ExecStart=/usr/bin/python3 ./server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
