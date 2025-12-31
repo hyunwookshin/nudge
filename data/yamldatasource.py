@@ -21,12 +21,7 @@ class YamlDataSource:
     def storeReminders(self, reminders):
         reminders = reminders[::-1]
         filtered = []
-        unclosed = set()
         for reminder in reminders:
-            if not reminder.closed:
-                if reminder.title in unclosed:
-                    continue
-                unclosed.add(reminder.title)
             filtered.append(reminder)
 
         reminders = filtered[::-1]

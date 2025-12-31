@@ -78,6 +78,7 @@ def add_reminder():
     info["Description"] = replaceWords(speller, data["Description"], cfg.getPreservedWords())
     date = data["Date"]
     time = data["Time"]
+    id = data.get("Id", "")
     secureKey = data["Key"]
     if secureKey != get_secure_key():
         return jsonify({"message": "Key mismatch!"}), 401
@@ -98,7 +99,16 @@ def add_reminder():
     info["Priority"] = int(data["Priority"])
     info["Closed"] = False
     info["Snooze"] = data.get("Snooze", 0)
+    info["Id"] = id
     r = reminder.Reminder(info)
+    orig_reminders = reminders[:]
+    reminders = []
+    for orig_r in orig_reminders:
+        if orig_r.id == r.id:
+            # skip reminder being updated
+            continue
+        else:
+            reminders.append(orig_r)
 
     reminders.append(r)
     datasource.storeReminders(reminders)
