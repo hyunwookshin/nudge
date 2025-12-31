@@ -35,12 +35,12 @@ class TestPriorities(unittest.TestCase):
 
         highPriority = priority.HighPriority(config)
         self.assertEqual(highPriority.value, 1)
-        self.assertEqual(highPriority.notif_time_seconds, 60*60)
+        self.assertEqual(highPriority.notif_time_seconds, 60*60*2)
         self.assertEqual(highPriority.actions[0].high_priority, True)
 
         veryHighPriority = priority.VeryHighPriority(config)
         self.assertEqual(veryHighPriority.value, 0)
-        self.assertEqual(veryHighPriority.notif_time_seconds, 60*60*2)
+        self.assertEqual(veryHighPriority.notif_time_seconds, 60*60*3)
         self.assertEqual(veryHighPriority.actions[0].high_priority, True)
 
 if __name__ == "__main__":
