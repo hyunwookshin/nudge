@@ -60,6 +60,29 @@ def replaceWords(speller, string, preservedWords):
         tokens[i] = speller.spell(tokens[i])
     return " ".join(tokens)
 
+@app.route('/delete_reminder', methods=['POST'])
+def delete_reminder():
+    data = request.json
+    reminderId = data.get("Id", "")
+
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    datasource = yamldatasource.YamlDataSource(cfg)
+    reminders = datasource.loadReminders()
+    filtered = []
+    for r in reminders:
+        if r.id == reminderId:
+            continue
+        filtered.append(r)
+
+    datasource.storeReminders(filtered)
+    if len(filtered) < len(reminders):
+        return jsonify({"message": "Reminder removed successfully!"}), 200
+    return jsonify({"message": "No reminder found"}), 500
+
 @app.route('/add_reminder', methods=['POST'])
 def add_reminder():
     data = request.json
