@@ -10,6 +10,9 @@ interface ApiService {
     @POST("/add_reminder")
     fun addReminder(@Body reminder: Reminder): Call<Void>
 
+    @POST("/delete_reminder")
+    fun deleteReminder(@Body reminder: Reminder): Call<Void>
+
     @GET("/reminders")
     fun getReminders(): Call<ReminderResponse>
 

@@ -18,7 +18,7 @@ import com.google.android.material.snackbar.Snackbar
 import retrofit2.Call
 import java.util.Calendar
 
-class ReminderListFragment : Fragment() {
+class ReminderListFragment : Fragment(), Refreshable {
 
     private lateinit var reminderAdapter: ReminderAdapter
     private lateinit var dateButton: Button
@@ -37,6 +37,10 @@ class ReminderListFragment : Fragment() {
         val todayDate = "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.YEAR)}"
         dateButton.text = "Show Calendar (" + todayDate + ")"
         return view
+    }
+
+    override fun refresh() {
+        fetchReminders()
     }
 
     private fun showDatePicker() {

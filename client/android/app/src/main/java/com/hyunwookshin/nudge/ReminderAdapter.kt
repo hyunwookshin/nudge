@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -58,7 +59,8 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val time: TextView = itemView.findViewById(R.id.time)
         private val read: TextView = itemView.findViewById(R.id.read)
         private val id: TextView = itemView.findViewById(R.id.id)
-        val editButton: Button = itemView.findViewById(R.id.editButton)
+        private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
+        private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
 
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
@@ -77,6 +79,9 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             editButton.setOnClickListener {
                 reminderCallback?.onEditReminder(reminder)
+            }
+            deleteButton.setOnClickListener {
+                reminderCallback?.onDeleteReminder(reminder)
             }
             itemView.setBackgroundColor(backgroundColor)
         }
