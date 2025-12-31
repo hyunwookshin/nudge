@@ -57,12 +57,14 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val description: TextView = itemView.findViewById(R.id.description)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val read: TextView = itemView.findViewById(R.id.read)
+        private val id: TextView = itemView.findViewById(R.id.id)
         val editButton: Button = itemView.findViewById(R.id.editButton)
 
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
             description.text = reminder.Description
             time.text = convert24HourTo12Hour(reminder.Time)
+            id.text = reminder.Id
             if (reminder.Read.isEmpty()) {
                 read.text = "(Not read)";
             } else {

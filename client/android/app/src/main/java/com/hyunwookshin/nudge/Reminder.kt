@@ -8,6 +8,7 @@ data class Reminder(
     val Description: String,
     val Date: String,
     val Time: String,
+    val Id: String,
     val Link: String,
     val Priority: Int,
     val Key: String,
@@ -15,6 +16,7 @@ data class Reminder(
     val Read: String,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.readString() ?: "",
@@ -31,6 +33,7 @@ data class Reminder(
         parcel.writeString(Description)
         parcel.writeString(Date)
         parcel.writeString(Time)
+        parcel.writeString(Id)
         parcel.writeString(Link)
         parcel.writeInt(Priority)
     }

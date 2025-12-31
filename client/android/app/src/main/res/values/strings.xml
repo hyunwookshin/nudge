@@ -14,5 +14,6 @@
     <string-array name="snooze_array">
         <item>No Snooze</item>
         <item>Snooze Once</item>
+        <item>Snooze Twice</item>
     </string-array>
 </resources>

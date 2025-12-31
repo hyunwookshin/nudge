@@ -30,6 +30,7 @@ class ReminderFragment : Fragment() {
     private lateinit var saveButton: Button
     private lateinit var passwordEditText: EditText
     private lateinit var snoozeSpinner: Spinner
+    private lateinit var idEditText: EditText
 
     private var selectedDate: String? = null
     private var selectedTime: String? = null
@@ -70,6 +71,7 @@ class ReminderFragment : Fragment() {
         prioritySpinner = view.findViewById(R.id.prioritySpinner)
         saveButton = view.findViewById(R.id.saveButton)
         snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
+        idEditText = view.findViewById(R.id.idEditText)
 
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
@@ -97,6 +99,7 @@ class ReminderFragment : Fragment() {
             descriptionEditText.setText(it.Description)
             linkEditText.setText(it.Link)
             prioritySpinner.setSelection(it.Priority)
+            idEditText.setText(it.Id)
             // Add more fields as necessary
         }
 
@@ -162,6 +165,7 @@ class ReminderFragment : Fragment() {
         val time = selectedTime.toString()
         val read = selectedTime.toString()
         val key = passwordEditText.text.toString()
+        val id = idEditText.text.toString()
         val snooze = snoozeSpinner.selectedItemPosition
 
         if (title.isEmpty() || description.isEmpty() || selectedDate == null || selectedTime == null ) {
@@ -169,19 +173,19 @@ class ReminderFragment : Fragment() {
             return
         }
 
-        val reminder = Reminder(title, description, date, time, link, priority, key, snooze, read)
+        val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read)
         sendReminder(reminder)
 
         // Clear all text fields except password
         titleEditText.text.clear()
         descriptionEditText.text.clear()
         linkEditText.text.clear()
+        idEditText.text.clear()
     }
 
     private fun sendReminder(reminder: Reminder) {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call = apiService.addReminder(reminder)
-        hideKeyboard()
         call.enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
