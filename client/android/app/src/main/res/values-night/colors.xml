@@ -7,6 +7,6 @@
     <color name="colorTextSecondary">#BDB5B5</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="high_priority">#C1616A</color>
-    <color name="low_priority">#5C5A5A</color>
+    <color name="high_priority">#713B40</color>
+    <color name="low_priority">#333232</color>
 </resources>

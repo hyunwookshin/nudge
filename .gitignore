@@ -1,3 +1,4 @@
 config.yaml
 backup.sh
 secure.key
+.DS_store
