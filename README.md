@@ -13,7 +13,7 @@ Simple reminder/notification app for everyday use.
 
 ### Screenshots
 
-<img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.jpg?raw=true" alt="Screenshot of the reminder page" width="250"/>
+<img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.png?raw=true" alt="Screenshot of the reminder page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/schedule_screenshot.jpg?raw=true" alt="Screenshot of the reminders/schedule page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_dark_screenshot.png?raw=true" alt="Screenshot of the reminders page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_web_screenshot.png?raw=true" alt="Screenshot of the reminders page on web browser" width="250"/>
@@ -63,6 +63,7 @@ pip3 install pytz
 pip3 install flask
 pip3 install waitress
 pip3 install autocorrect
+pip3 install openai
 ```
 
 ### Set up the config
@@ -117,7 +118,7 @@ This requires the following nginx settings:
 And run the server
 
 ```
-NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=./config.yaml ./server.py
+OPENAI_API_KEY=. NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=./config.yaml ./server.py
 ```
 
 The `NUDGE_SERVER_SECURE_PATH` should be where the secure key is stored.
