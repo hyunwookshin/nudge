@@ -32,10 +32,17 @@ class ReminderFragment : Fragment() {
     private lateinit var snoozeSpinner: Spinner
     private lateinit var idEditText: EditText
 
-    private var selectedDate: String? = null
-    private var selectedTime: String? = null
+    private var selectedDate: String? = null          // yyyy-MM-dd
+    private var selectedTime: String? = null          // HH:mm:00
+
+    //  Keep a single calendar for the selected date/time so pickers & saving stay consistent
+    private val selectedCal: Calendar = Calendar.getInstance()
+
+    private val apiDateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+    private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     private var callback: ReminderCallback? = null
+
     companion object {
         private const val ARG_REMINDER = "reminder"
 
@@ -76,6 +83,7 @@ class ReminderFragment : Fragment() {
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
         saveButton.setOnClickListener { saveReminder() }
+
         linkEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 hideKeyboard()
@@ -94,13 +102,37 @@ class ReminderFragment : Fragment() {
 
         // Prepopulation when user clicks "Edit" from the list view.
         reminder?.let {
-            // Prepopulate the fields with the reminder data
             titleEditText.setText(it.Title)
             descriptionEditText.setText(it.Description)
             linkEditText.setText(it.Link)
             prioritySpinner.setSelection(it.Priority)
             idEditText.setText(it.Id)
-            // Add more fields as necessary
+
+            //  Parse existing reminder time and set date/time buttons + internal state
+            // Expecting it.Time like "yyyy-MM-dd HH:mm"
+            val parsed = try {
+                apiDateTimeFormat.parse(it.Time)
+            } catch (e: Exception) {
+                null
+            }
+
+            if (parsed != null) {
+                selectedCal.time = parsed
+
+                // selectedDate = yyyy-MM-dd
+                selectedDate = apiDateFormat.format(selectedCal.time)
+                dateButton.text = selectedDate
+
+                // selectedTime = HH:mm:00
+                val hour = selectedCal.get(Calendar.HOUR_OF_DAY)
+                val minute = selectedCal.get(Calendar.MINUTE)
+                selectedTime = String.format(Locale.US, "%02d:%02d:00", hour, minute)
+                timeButton.text = selectedTime
+            } else {
+                // If parsing fails, leave buttons as-is; user can pick again
+                selectedDate = null
+                selectedTime = null
+            }
         }
 
         fetchAllReminders()
@@ -109,43 +141,50 @@ class ReminderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         val showRemindersButton: Button = view.findViewById(R.id.showRemindersButton)
-        // Button to show reminders
-        showRemindersButton.setOnClickListener {
-            callback?.onShowReminders()
-        }
+        showRemindersButton.setOnClickListener { callback?.onShowReminders() }
     }
 
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
+        // Start picker at currently selected value (or today if none)
+        val year = selectedCal.get(Calendar.YEAR)
+        val month = selectedCal.get(Calendar.MONTH)
+        val day = selectedCal.get(Calendar.DAY_OF_MONTH)
+
         val datePicker = DatePickerDialog(
             requireContext(),
-            { _, year, month, dayOfMonth ->
-                val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(
-                    GregorianCalendar(year, month, dayOfMonth).time
-                )
+            { _, y, m, d ->
+                selectedCal.set(Calendar.YEAR, y)
+                selectedCal.set(Calendar.MONTH, m)
+                selectedCal.set(Calendar.DAY_OF_MONTH, d)
+
+                val date = apiDateFormat.format(selectedCal.time) // yyyy-MM-dd
                 selectedDate = date
                 dateButton.text = date
             },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
+            year, month, day
         )
         datePicker.show()
     }
 
     private fun showTimePicker() {
-        val calendar = Calendar.getInstance()
+        //  Start picker at currently selected value (or now if none)
+        val hour = selectedCal.get(Calendar.HOUR_OF_DAY)
+        val minute = selectedCal.get(Calendar.MINUTE)
+
         val timePicker = TimePickerDialog(
             requireContext(),
-            { _, hourOfDay, minute ->
-                val time = String.format("%02d:%02d:00", hourOfDay, minute)
+            { _, h, min ->
+                selectedCal.set(Calendar.HOUR_OF_DAY, h)
+                selectedCal.set(Calendar.MINUTE, min)
+                selectedCal.set(Calendar.SECOND, 0)
+                selectedCal.set(Calendar.MILLISECOND, 0)
+
+                val time = String.format(Locale.US, "%02d:%02d:00", h, min)
                 selectedTime = time
                 timeButton.text = time
             },
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
+            hour, minute,
             true
         )
         timePicker.show()
@@ -161,8 +200,6 @@ class ReminderFragment : Fragment() {
         val description = descriptionEditText.text.toString()
         val link = linkEditText.text.toString()
         val priority = prioritySpinner.selectedItemPosition
-        val date = selectedDate.toString()
-        val time = selectedTime.toString()
         val read = selectedTime.toString()
         val key = passwordEditText.text.toString()
         val id = idEditText.text.toString()
@@ -173,6 +210,10 @@ class ReminderFragment : Fragment() {
             return
         }
 
+        // Your Reminder constructor seems to want separate date + time fields.
+        val date = selectedDate!!            // yyyy-MM-dd
+        val time = selectedTime!!            // HH:mm:00
+
         val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read)
         sendReminder(reminder)
 
@@ -181,6 +222,10 @@ class ReminderFragment : Fragment() {
         descriptionEditText.text.clear()
         linkEditText.text.clear()
         idEditText.text.clear()
+
+        // Reset selected date/time
+        selectedDate = null
+        selectedTime = null
     }
 
     private fun sendReminder(reminder: Reminder) {
