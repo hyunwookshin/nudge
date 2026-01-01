@@ -1,5 +1,7 @@
 package com.hyunwookshin.nudge
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -62,6 +64,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val id: TextView = itemView.findViewById(R.id.id)
         private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
+        private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
 
         fun bind(reminder: Reminder) {
             title.text = reminder.Title
@@ -83,6 +86,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             deleteButton.setOnClickListener {
                 reminderCallback?.onDeleteReminder(reminder)
+            }
+            val link = reminder.Link
+            if (!link.isNullOrBlank()) {
+                linkButton.visibility = View.VISIBLE
+                linkButton.setOnClickListener {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+                    itemView.context.startActivity(intent)
+                }
+            } else {
+                linkButton.visibility = View.GONE
+                linkButton.setOnClickListener(null)
             }
             cardRoot.background?.mutate()?.setTint(backgroundColor)
         }
