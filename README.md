@@ -6,15 +6,14 @@ Simple reminder/notification app for everyday use.
 
 ### Work flow
 
-- Create a reminder
+- Create a reminder manually or using AI prompt
 - Set priority and time to be reminded
-- Check future reminders
+- Check future reminders, update them
 - Get reminders via email/SMS depending on the priorities
 
 ### Screenshots
 
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.png?raw=true" alt="Screenshot of the reminder page" width="250"/>
-<img src="https://github.com/hyunwookshin/nudge/blob/main/images/schedule_screenshot.jpg?raw=true" alt="Screenshot of the reminders/schedule page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_dark_screenshot.png?raw=true" alt="Screenshot of the reminders page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_web_screenshot.png?raw=true" alt="Screenshot of the reminders page on web browser" width="250"/>
 
@@ -100,6 +99,14 @@ This requires the following nginx settings:
      ssl_prefer_server_ciphers on;
      # Nudge
      location /add_reminder {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+     location /add_reminder_ai {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+     location /delete_reminder {
          proxy_pass http://127.0.0.1:5000;
          proxy_set_header X-Real-IP $remote_addr;
      }
