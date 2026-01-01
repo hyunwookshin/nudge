@@ -9,6 +9,7 @@ Restart=always
 RestartSec=5
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 WorkingDirectory=/path/to/nudge
+Environment=OPENAI_API_KEY=...
 Environment=NUDGE_STORE_PATH=/path/to/nudge/store
 Environment=NUDGE_SECURE_KEY_PATH=/path/to/secure.key
 Environment=NUDGE_CONFIG_PATH=./config.yaml

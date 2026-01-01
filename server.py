@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import pytz
 import yaml
 import os
+import ai
 from waitress import serve
 
 from spell import spell
@@ -132,6 +133,76 @@ def add_reminder():
             continue
         else:
             reminders.append(orig_r)
+
+    reminders.append(r)
+    datasource.storeReminders(reminders)
+
+    return jsonify({"message": "Reminder added successfully!"}), 200
+
+@app.route('/add_reminder_ai', methods=['POST'])
+def add_reminder_ai():
+    data = request.json or {}
+    free_text = data.get("Text", "").strip()
+    secureKey = data.get("Key", "")
+
+    if not free_text:
+        return jsonify({"message": "Missing Text"}), 400
+
+    if secureKey != get_secure_key():
+        return jsonify({"message": "Key mismatch!"}), 401
+
+    # Load config
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    datasource = yamldatasource.YamlDataSource(cfg)
+    reminders = datasource.loadReminders()
+    speller = spell.CustomSpeller()
+
+    # 1) Ask OpenAI to parse free text into structured fields
+    ai_r = ai.parse_reminder_from_text_openai(free_text, cfg)
+
+    # 2) Build the same "info" dict shape you already store
+    info = {}
+    info["Title"] = replaceWords(speller, ai_r["Title"], cfg.getPreservedWords())
+    info["Description"] = replaceWords(speller, ai_r["Description"], cfg.getPreservedWords())
+
+    # AI gives local Date + Time
+    date = ai_r["Date"]               # yyyy-mm-dd
+    time = ai_r["Time"]               # HH:MM:SS
+
+    if cfg.getTimeZone():
+        local = pytz.timezone(cfg.getTimeZone())
+        defaulttime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S")
+        localtime = local.localize(defaulttime)
+        utc_time = localtime.astimezone(pytz.utc)
+    else:
+        offset = timedelta(hours=cfg.getTimeZoneOffset())
+        localtime = datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(offset))
+        utc_time = localtime.astimezone(timezone.utc)
+
+    info["Time"] = utc_time.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Template rules you specified
+    info["Closed"] = False
+    info["Priority"] = 2
+    info["Snooze"] = 2
+    info["Id"] = ""          # leave empty
+    info["Link"] = ai_r.get("Link", "") or ""
+    info["Read"] = utc_time.strftime("%Y-%m-%d %H:%M:%S")  # "match the time"
+
+    r = reminder.Reminder(info)
+
+    # Remove any existing reminder with same ID (yours uses ID for updates).
+    # Since ID is empty here, it will behave like "append new" unless your model assigns one.
+    orig_reminders = reminders[:]
+    reminders = []
+    for orig_r in orig_reminders:
+        if orig_r.id == r.id and r.id != "":
+            continue
+        reminders.append(orig_r)
 
     reminders.append(r)
     datasource.storeReminders(reminders)
