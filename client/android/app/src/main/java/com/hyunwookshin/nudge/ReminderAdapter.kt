@@ -87,6 +87,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val countdown: TextView = itemView.findViewById(R.id.countdown)
         private val id: TextView = itemView.findViewById(R.id.id)
         private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
+        private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
         private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
 
@@ -115,6 +116,9 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             editButton.setOnClickListener {
                 reminderCallback?.onEditReminder(reminder)
+            }
+            copyButton.setOnClickListener {
+                reminderCallback?.onCopyReminder(reminder)
             }
             deleteButton.setOnClickListener {
                 reminderCallback?.onDeleteReminder(reminder)

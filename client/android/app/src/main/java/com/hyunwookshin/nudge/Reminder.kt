@@ -8,7 +8,7 @@ data class Reminder(
     val Description: String,
     val Date: String,
     val Time: String,
-    val Id: String,
+    var Id: String,
     val Link: String,
     val Priority: Int,
     val Key: String,

@@ -37,6 +37,13 @@ class MainActivity : AppCompatActivity(), ReminderCallback {
             .commit()
     }
 
+    override fun onCopyReminder(reminder: Reminder) {
+        // clearing the id forces new instance, instead of updating
+        // the old instance.
+        reminder.Id = ""
+        onEditReminder(reminder)
+    }
+
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
