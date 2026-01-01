@@ -31,6 +31,8 @@ class ReminderFragment : Fragment() {
     private lateinit var passwordEditText: EditText
     private lateinit var snoozeSpinner: Spinner
     private lateinit var idEditText: EditText
+    private lateinit var aiInputEditText: EditText
+    private lateinit var aiGenerateButton: Button
 
     private var selectedDate: String? = null          // yyyy-MM-dd
     private var selectedTime: String? = null          // HH:mm:00
@@ -79,6 +81,9 @@ class ReminderFragment : Fragment() {
         saveButton = view.findViewById(R.id.saveButton)
         snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
         idEditText = view.findViewById(R.id.idEditText)
+        aiInputEditText = view.findViewById(R.id.aiInputEditText)
+        aiGenerateButton = view.findViewById(R.id.aiGenerateButton)
+        aiGenerateButton.setOnClickListener { generateReminderUsingAI() }
 
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
@@ -266,6 +271,46 @@ class ReminderFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
+                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun generateReminderUsingAI() {
+        val text = aiInputEditText.text.toString().trim()
+        val key = passwordEditText.text.toString().trim()
+
+        if (text.isEmpty()) {
+            Snackbar.make(requireView(), "Type something for AI to generate.", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        if (key.isEmpty()) {
+            Snackbar.make(requireView(), "Key is required.", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        aiGenerateButton.isEnabled = false
+
+        val apiService = ApiClient.getClient().create(ApiService::class.java)
+        val req = AddReminderAiRequest(Text = text, Key = key)
+
+        apiService.addReminderAI(req).enqueue(object : Callback<AddReminderAiResponse> {
+            override fun onResponse(
+                call: Call<AddReminderAiResponse>,
+                response: Response<AddReminderAiResponse>
+            ) {
+                aiGenerateButton.isEnabled = true
+
+                if (!response.isSuccessful || response.body() == null) {
+                    Snackbar.make(requireView(), "AI generate failed (${response.code()})", Snackbar.LENGTH_SHORT).show()
+                    return
+                }
+
+                Snackbar.make(requireView(), "Added via AI.", Snackbar.LENGTH_SHORT).show()
+            }
+
+            override fun onFailure(call: Call<AddReminderAiResponse>, t: Throwable) {
+                aiGenerateButton.isEnabled = true
                 Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
             }
         })

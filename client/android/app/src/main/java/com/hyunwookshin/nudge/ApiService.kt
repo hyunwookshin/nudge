@@ -13,6 +13,9 @@ interface ApiService {
     @POST("/delete_reminder")
     fun deleteReminder(@Body reminder: Reminder): Call<Void>
 
+    @POST("add_reminder_ai")
+    fun addReminderAI(@Body req: AddReminderAiRequest): Call<AddReminderAiResponse>
+
     @GET("/reminders")
     fun getReminders(): Call<ReminderResponse>
 

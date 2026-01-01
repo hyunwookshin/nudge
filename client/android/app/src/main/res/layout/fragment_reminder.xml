@@ -18,21 +18,27 @@
         android:layout_margin="8dp"
         android:hint="Description" />
 
-    <Button
-        android:id="@+id/dateButton"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/rounded_corner"
-        android:layout_margin="4dp"
-        android:text="Select Date" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <Button
+            android:id="@+id/dateButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_corner"
+            android:layout_margin="4dp"
+            android:text="Date" />
 
-    <Button
-        android:id="@+id/timeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rounded_corner"
-        android:layout_margin="4dp"
-        android:text="Select Time" />
+        <Button
+            android:id="@+id/timeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_corner"
+            android:layout_margin="4dp"
+            android:text="Time" />
+    </LinearLayout>
 
     <EditText
         android:id="@+id/idEditText"
@@ -74,20 +80,66 @@
         android:layout_margin="8dp"
         android:entries="@array/snooze_array" />
 
-    <Button
-        android:id="@+id/saveButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rounded_corner"
-        android:layout_margin="4dp"
-        android:text="Save" />
-
-    <Button
-        android:id="@+id/showRemindersButton"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Show Reminders"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/rounded_corner"
-        android:layout_gravity="center" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_corner"
+            android:layout_margin="4dp"
+            android:text="Save" />
+
+        <Button
+            android:id="@+id/showRemindersButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Reminders"
+            android:layout_margin="4dp"
+            android:background="@drawable/rounded_corner"
+            android:layout_gravity="center" />
+    </LinearLayout>
+
+    <!-- AI Quick Add -->
+    <LinearLayout
+    android:id="@+id/aiBox"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:padding="12dp"
+    android:orientation="vertical"
+    android:background="@drawable/bg_ai_gradient">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AI quick add"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/aiInputEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Generate using AI… e.g. “Pay rent on Jan 5 at 9am”"
+        android:textColor="@android:color/white"
+        android:background="@android:color/transparent"
+        android:inputType="textCapSentences|textMultiLine"
+        android:minLines="2"
+        android:maxLines="4" />
+
+    <Button
+        android:id="@+id/aiGenerateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Generate using AI"
+        android:backgroundTint="#FFFFFF"
+        android:textColor="#4C1D95" />
+    </LinearLayout>
 </LinearLayout>
