@@ -43,8 +43,8 @@ class MiniCalendarAdapter(
 
             dayNumber.text = state.date.dayOfMonth.toString()
 
-            // Count badge (only show if > 1)
-            if (state.count > 1) {
+            // Count badge (only show if >= 1)
+            if (state.count >= 1) {
                 dayCount.visibility = View.VISIBLE
                 dayCount.text = state.count.toString()
             } else {
