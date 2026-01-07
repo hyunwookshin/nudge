@@ -262,16 +262,22 @@ class ReminderFragment : Fragment() {
 
         call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
+                if (!isAdded) return
                 if (response.isSuccessful) {
                     reminders = response.body()?.reminders ?: emptyList()
                     setupAutoComplete()
                 } else {
-                    Snackbar.make(requireView(), "Failed to fetch reminders", Snackbar.LENGTH_SHORT).show()
+                    view?.let { v ->
+                        Snackbar.make(v, "Failed to fetch reminders", Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             }
 
             override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
-                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+                if (!isAdded) return
+                view?.let { v ->
+                    Snackbar.make(v, "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+                }
             }
         })
     }
