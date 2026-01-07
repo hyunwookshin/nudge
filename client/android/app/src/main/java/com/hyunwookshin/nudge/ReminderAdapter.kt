@@ -38,7 +38,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     }
 
     fun setReminders(reminders: List<Reminder>) {
-        this.reminders = reminders.sortedBy { it->it.Time }
+        this.reminders = reminders // already sorted
         notifyDataSetChanged()
     }
     fun setReminderCallback(callback: ReminderCallback) {

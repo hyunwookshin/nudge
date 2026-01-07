@@ -19,6 +19,7 @@ import retrofit2.Call
 import java.util.Calendar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.recyclerview.widget.LinearSmoothScroller
 
 private val reminderDateTimeFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm") // your Android field
 
@@ -29,6 +30,9 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var dateButton: Button
     private lateinit var progressBar: ProgressBar
     private var reminderCallback: ReminderCallback? = null
+    // Manage state
+    private lateinit var recyclerView: RecyclerView
+    private var currentReminders: List<Reminder> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -81,7 +85,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                 setReminderCallback(it)
             }
         }
-        val recyclerView: RecyclerView = view.findViewById(R.id.recyclerView)
+        recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
         progressBar.visibility = View.VISIBLE
@@ -100,9 +104,10 @@ class ReminderListFragment : Fragment(), Refreshable {
                 if (!isAdded || view == null) return
                 progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
-                    val reminders = response.body()?.reminders ?: emptyList()
+                    val reminders = (response.body()?.reminders ?: emptyList())
+                        .sortedBy { it.Time }
                     Log.d("ReminderListFragment", "Reminders fetched: ${reminders.size}")
-
+                    currentReminders = reminders
                     reminderAdapter.setReminders(reminders)
                     miniCalendarAdapter.submit(buildMiniCalendarDays(reminders))
 
@@ -124,9 +129,32 @@ class ReminderListFragment : Fragment(), Refreshable {
         val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
         rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
         miniCalendarAdapter = MiniCalendarAdapter { clickedDate ->
-            // Optional: scroll list to date, or filter, or open calendar view
+            val idx = findFirstReminderIndexForDate(clickedDate)
+            if (idx >= 0) {
+                recyclerView.post {
+                    val offsetPx = (recyclerView.resources.displayMetrics.density).toInt() // 32dp
+                    recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                }
+            }
+
         }
         rv.adapter = miniCalendarAdapter
+    }
+
+    private fun findFirstReminderIndexForDate(date: LocalDate): Int {
+        for (i in currentReminders.indices) {
+            val reminderDate = reminderLocalDate(currentReminders[i]) ?: continue
+            if (reminderDate == date) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    private fun reminderLocalDate(r: Reminder): LocalDate? {
+        return runCatching {
+            LocalDate.parse(r.Time.take(10)) // yyyy-MM-dd
+        }.getOrNull()
     }
 
     private fun buildMiniCalendarDays(reminders: List<Reminder>): List<DayState> {
@@ -162,6 +190,25 @@ class ReminderListFragment : Fragment(), Refreshable {
                 hasLow = triple.third
             )
         }
+    }
+
+    private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {
+        val lm = layoutManager as? LinearLayoutManager ?: run {
+            smoothScrollToPosition(position)
+            return
+        }
+
+        val scroller = object : LinearSmoothScroller(context) {
+            override fun getVerticalSnapPreference(): Int = SNAP_TO_START
+
+            override fun calculateDyToMakeVisible(view: View, snapPreference: Int): Int {
+                // default snap-to-start dy, then apply your extra offset
+                return super.calculateDyToMakeVisible(view, snapPreference) - offsetPx
+            }
+        }
+
+        scroller.targetPosition = position
+        lm.startSmoothScroll(scroller)
     }
 
 }

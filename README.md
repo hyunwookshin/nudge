@@ -4,6 +4,10 @@
 
 Simple reminder/notification app for everyday use.
 
+### Demo
+
+[![Nudge demo](docs/demo.png)](https://youtube.com/shorts/lRoUi-cW25s)
+
 ### Work flow
 
 - Create a reminder manually or using AI prompt
