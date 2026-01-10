@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Callback
@@ -33,6 +34,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     // Manage state
     private lateinit var recyclerView: RecyclerView
     private var currentReminders: List<Reminder> = emptyList()
+    private var miniCalAnchor: LocalDate = LocalDate.now()
+    private lateinit var miniCalendarMonth: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,7 +47,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         progressBar = view.findViewById(R.id.progressBar)
         val calendar = Calendar.getInstance()
         val todayDate = "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.YEAR)}"
-        dateButton.text = "Show Calendar (" + todayDate + ")"
+        dateButton.text = todayDate
         return view
     }
 
@@ -77,6 +80,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        miniCalendarMonth = view.findViewById(R.id.miniCalendarMonth)
         setupMiniCalendar(view)
 
         // Ensure that the Edit button is wired to the callback in MainActivity.
@@ -109,7 +113,8 @@ class ReminderListFragment : Fragment(), Refreshable {
                     Log.d("ReminderListFragment", "Reminders fetched: ${reminders.size}")
                     currentReminders = reminders
                     reminderAdapter.setReminders(reminders)
-                    miniCalendarAdapter.submit(buildMiniCalendarDays(reminders))
+                    miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
+                    updateMiniCalendarMonth(miniCalAnchor)
 
                 } else {
                     Snackbar.make(requireView(), "Failed to load reminders", Snackbar.LENGTH_SHORT).show()
@@ -129,6 +134,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
         rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
         miniCalendarAdapter = MiniCalendarAdapter { clickedDate ->
+            // 1) recenters the mini calendar so clicked date becomes middle row
+            miniCalAnchor = clickedDate
+            updateMiniCalendarMonth(miniCalAnchor)
+            miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+
+            // 2) (optional) still scroll reminders list to that day
             val idx = findFirstReminderIndexForDate(clickedDate)
             if (idx >= 0) {
                 recyclerView.post {
@@ -157,20 +168,25 @@ class ReminderListFragment : Fragment(), Refreshable {
         }.getOrNull()
     }
 
-    private fun buildMiniCalendarDays(reminders: List<Reminder>): List<DayState> {
-        val today = LocalDate.now()
-        val start = today.minusDays(today.dayOfWeek.value % 7L)
-        val end = start.plusDays(20) // 3 weeks (21 days)
+    private fun updateMiniCalendarMonth(anchor: LocalDate) {
+        val fmt = DateTimeFormatter.ofPattern("MMMM yyyy")
+        miniCalendarMonth.text = anchor.format(fmt)
+    }
 
-        // date -> (count, hasHigh, hasLow)
+    private fun buildMiniCalendarDays(
+        reminders: List<Reminder>,
+        anchor: LocalDate
+    ): List<DayState> {
+
+        // Sunday-start alignment, and anchor lands in the middle row
+        val weekdayOffset = anchor.dayOfWeek.value % 7 // Sun=0, Mon=1, ...
+        val start = anchor.minusDays((7 + weekdayOffset).toLong())
+        val end = start.plusDays(20)
+
         val agg = mutableMapOf<LocalDate, Triple<Int, Boolean, Boolean>>()
 
         for (r in reminders) {
-            // Your Android Reminder.Time looks like "yyyy-MM-dd HH:mm" (after your fixes)
-            val date = runCatching {
-                LocalDate.parse(r.Time.take(10)) // "yyyy-MM-dd"
-            }.getOrNull() ?: continue
-
+            val date = runCatching { LocalDate.parse(r.Time.take(10)) }.getOrNull() ?: continue
             if (date.isBefore(start) || date.isAfter(end)) continue
 
             val prev = agg[date] ?: Triple(0, false, false)
@@ -183,14 +199,10 @@ class ReminderListFragment : Fragment(), Refreshable {
         return (0..20).map { offset ->
             val d = start.plusDays(offset.toLong())
             val triple = agg[d] ?: Triple(0, false, false)
-            DayState(
-                date = d,
-                count = triple.first,
-                hasHigh = triple.second,
-                hasLow = triple.third
-            )
+            DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third)
         }
     }
+
 
     private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {
         val lm = layoutManager as? LinearLayoutManager ?: run {

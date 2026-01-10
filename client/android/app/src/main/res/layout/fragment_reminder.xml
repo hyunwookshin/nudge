@@ -118,7 +118,7 @@
         android:layout_height="wrap_content"
         android:text="AI quick add"
         android:textStyle="bold"
-        android:textColor="@android:color/white"
+        android:textColor="@color/colorTextPrimary"
         android:textSize="14sp" />
 
     <EditText
@@ -138,8 +138,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Generate using AI"
+        android:text="Generate"
+        android:background="@drawable/rounded_corner"
         android:backgroundTint="#FFFFFF"
-        android:textColor="#4C1D95" />
+        android:textColor="#923ECD" />
     </LinearLayout>
 </LinearLayout>
