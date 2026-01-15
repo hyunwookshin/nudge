@@ -226,7 +226,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun jumpMonthMiniCalendar(deltaMonths: Long) {
-        // safe anchor: always the 15th
+        // safe anchor: always the 10th
         miniCalAnchor = miniCalAnchor
             .plusMonths(deltaMonths)
             .withDayOfMonth(10)
