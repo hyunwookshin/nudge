@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity(), ReminderCallback {
         setContentView(R.layout.activity_main)
 
         if (savedInstanceState == null) {
-            loadFragment(ReminderFragment())
+            loadFragment(ReminderListFragment())
         }
     }
 

@@ -30,9 +30,10 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     private lateinit var reminderAdapter: ReminderAdapter
     private lateinit var miniCalendarAdapter: MiniCalendarAdapter
-    private lateinit var dateButton: Button
+    private lateinit var todayText: TextView
     private lateinit var progressBar: ProgressBar
     private var reminderCallback: ReminderCallback? = null
+    private lateinit var addEventText: TextView
     // Manage state
     private lateinit var recyclerView: RecyclerView
     private var currentReminders: List<Reminder> = emptyList()
@@ -46,29 +47,29 @@ class ReminderListFragment : Fragment(), Refreshable {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_reminder_list, container, false)
-        dateButton = view.findViewById(R.id.dateButton)
-        dateButton.setOnClickListener { showDatePicker() }
+        todayText = view.findViewById(R.id.todayText)
+
+        val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+        todayText.text = "Today is " + LocalDate.now().format(fmt)
         progressBar = view.findViewById(R.id.progressBar)
         val calendar = Calendar.getInstance()
-        val todayDate = "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.YEAR)}"
-        dateButton.text = todayDate
+
+        addEventText = view.findViewById(R.id.addEventText)
+        addEventText.setOnClickListener {
+            val fragment = ReminderFragment.newInstanceForDate(
+                LocalDate.now().format(argDateFmt)
+            )
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
         return view
     }
 
     override fun refresh() {
         fetchReminders()
-    }
-
-    private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        val datePicker = DatePickerDialog(
-            requireContext(),
-            { _, _, _, _ -> },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        datePicker.show()
     }
 
     // Set MainActivity as the callback
