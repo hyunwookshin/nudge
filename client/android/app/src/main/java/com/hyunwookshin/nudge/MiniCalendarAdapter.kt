@@ -11,7 +11,8 @@ import com.google.android.material.card.MaterialCardView
 import java.time.LocalDate
 
 class MiniCalendarAdapter(
-    private val onDayClick: ((LocalDate) -> Unit)? = null
+    private val onDayClick: ((LocalDate) -> Unit)? = null,
+    private val onDayLongPress: ((LocalDate, View) -> Unit)? = null
 ) : RecyclerView.Adapter<MiniCalendarAdapter.VH>() {
 
     private var days: List<DayState> = emptyList()
@@ -29,7 +30,7 @@ class MiniCalendarAdapter(
     override fun getItemCount(): Int = days.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(days[position], onDayClick)
+        holder.bind(days[position], onDayClick, onDayLongPress)
     }
 
     class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -37,7 +38,7 @@ class MiniCalendarAdapter(
         private val dayNumber: TextView = itemView.findViewById(R.id.dayNumber)
         private val dayCount: TextView = itemView.findViewById(R.id.dayCount)
 
-        fun bind(state: DayState, onDayClick: ((LocalDate) -> Unit)?) {
+        fun bind(state: DayState, onDayClick: ((LocalDate) -> Unit)?, onDayLongPress: ((LocalDate, View) -> Unit)?) {
             val ctx = itemView.context
             val today = LocalDate.now()
 
@@ -76,6 +77,10 @@ class MiniCalendarAdapter(
             }
 
             itemView.setOnClickListener { onDayClick?.invoke(state.date) }
+            itemView.setOnLongClickListener {
+                onDayLongPress?.invoke(state.date, itemView)
+                true
+            }
         }
 
         private fun dp(ctx: android.content.Context, v: Int): Int {

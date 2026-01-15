@@ -47,12 +47,21 @@ class ReminderFragment : Fragment() {
 
     companion object {
         private const val ARG_REMINDER = "reminder"
+        private const val ARG_PREFILL_DATE = "prefill_date"
 
         fun newInstance(reminder: Reminder): ReminderFragment {
             val fragment = ReminderFragment()
             val args = Bundle()
             args.putParcelable(ARG_REMINDER, reminder)
             fragment.arguments = args
+            return fragment
+        }
+
+        fun newInstanceForDate(date: String): ReminderFragment {
+            val fragment = ReminderFragment()
+            fragment.arguments = Bundle().apply {
+                putString(ARG_PREFILL_DATE, date) // yyyy-MM-dd
+            }
             return fragment
         }
     }
@@ -104,6 +113,12 @@ class ReminderFragment : Fragment() {
         passwordEditText.setText(ApiKey.key)
 
         val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
+        // Prepopulation when user long-pressed date on mini calendar
+        val prefillDate = arguments?.getString(ARG_PREFILL_DATE)
+        if (!prefillDate.isNullOrBlank()) {
+            selectedDate = prefillDate
+            dateButton.text = prefillDate
+        }
 
         // Prepopulation when user clicks "Edit" from the list view.
         reminder?.let {

@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,8 +23,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.recyclerview.widget.LinearSmoothScroller
 
-private val reminderDateTimeFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm") // your Android field
-
+// For creating a new reminder
+private val argDateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 class ReminderListFragment : Fragment(), Refreshable {
 
     private lateinit var reminderAdapter: ReminderAdapter
@@ -133,23 +134,44 @@ class ReminderListFragment : Fragment(), Refreshable {
     private fun setupMiniCalendar(view: View) {
         val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
         rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
-        miniCalendarAdapter = MiniCalendarAdapter { clickedDate ->
-            // 1) recenters the mini calendar so clicked date becomes middle row
-            miniCalAnchor = clickedDate
-            updateMiniCalendarMonth(miniCalAnchor)
-            miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+        miniCalendarAdapter = MiniCalendarAdapter(
+            onDayClick = { clickedDate ->
+                // 1) recenters the mini calendar so clicked date becomes middle row
+                miniCalAnchor = clickedDate
+                updateMiniCalendarMonth(miniCalAnchor)
+                miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
 
-            // 2) (optional) still scroll reminders list to that day
-            val idx = findFirstReminderIndexForDate(clickedDate)
-            if (idx >= 0) {
-                recyclerView.post {
-                    val offsetPx = (recyclerView.resources.displayMetrics.density).toInt() // 32dp
-                    recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                // 2) (optional) still scroll reminders list to that day
+                val idx = findFirstReminderIndexForDate(clickedDate)
+                if (idx >= 0) {
+                    recyclerView.post {
+                        val offsetPx =
+                            (recyclerView.resources.displayMetrics.density).toInt() // 32dp
+                        recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                    }
                 }
-            }
-
-        }
+            },
+            onDayLongPress = { date, anchorView ->
+                showDayMenu(date, anchorView)
+            })
         rv.adapter = miniCalendarAdapter
+    }
+
+    private fun showDayMenu(date: LocalDate, anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, "+ Add Event")
+        popup.setOnMenuItemClickListener { item ->
+            if (item.itemId == 1) {
+                // Navigate to ReminderFragment with date prefilled
+                val fragment = ReminderFragment.newInstanceForDate(date.format(argDateFmt))
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
+                true
+            } else false
+        }
+        popup.show()
     }
 
     private fun findFirstReminderIndexForDate(date: LocalDate): Int {
