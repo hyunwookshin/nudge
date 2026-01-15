@@ -172,7 +172,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
                 }
                 // 2) (optional) still scroll reminders list to that day
-                val idx = findFirstReminderIndexForDate(clickedDate)
+                val idx = findFirstReminderIndexOnOrAfter(clickedDate)
                 if (idx >= 0) {
                     recyclerView.post {
                         val offsetPx =
@@ -204,10 +204,10 @@ class ReminderListFragment : Fragment(), Refreshable {
         popup.show()
     }
 
-    private fun findFirstReminderIndexForDate(date: LocalDate): Int {
+    private fun findFirstReminderIndexOnOrAfter(date: LocalDate): Int {
         for (i in currentReminders.indices) {
-            val reminderDate = reminderLocalDate(currentReminders[i]) ?: continue
-            if (reminderDate == date) {
+            val d = reminderLocalDate(currentReminders[i]) ?: continue
+            if (!d.isBefore(date)) { // d >= date
                 return i
             }
         }
