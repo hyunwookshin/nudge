@@ -220,10 +220,17 @@ class ReminderListFragment : Fragment(), Refreshable {
         anchor: LocalDate
     ): List<DayState> {
 
-        // Sunday-start alignment, and anchor lands in the middle row
-        val weekdayOffset = anchor.dayOfWeek.value % 7 // Sun=0, Mon=1, ...
-        val start = anchor.minusDays((7 + weekdayOffset).toLong())
-        val end = start.plusDays(20)
+        // Align to Sunday (S M T W T F S)
+        val weekdayOffset = anchor.dayOfWeek.value % 7 // Sun=0
+        val anchorWeekSunday = anchor.minusDays(weekdayOffset.toLong())
+
+        // 4 rows (28 days). Put anchor week on row #2 (index 1):
+        // Row 0: week before
+        // Row 1: anchor week
+        // Row 2: next week
+        // Row 3: following week
+        val start = anchorWeekSunday.minusDays(7)
+        val end = start.plusDays(27)
 
         val agg = mutableMapOf<LocalDate, Triple<Int, Boolean, Boolean>>()
 
@@ -238,7 +245,7 @@ class ReminderListFragment : Fragment(), Refreshable {
             agg[date] = Triple(count, hasHigh, hasLow)
         }
 
-        return (0..20).map { offset ->
+        return (0..27).map { offset ->
             val d = start.plusDays(offset.toLong())
             val triple = agg[d] ?: Triple(0, false, false)
             DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third)
