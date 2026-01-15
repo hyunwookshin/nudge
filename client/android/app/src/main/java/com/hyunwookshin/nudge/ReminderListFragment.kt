@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -37,6 +38,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     private var currentReminders: List<Reminder> = emptyList()
     private var miniCalAnchor: LocalDate = LocalDate.now()
     private lateinit var miniCalendarMonth: TextView
+    private lateinit var miniCalPrev: ImageButton
+    private lateinit var miniCalNext: ImageButton
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -82,6 +85,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         super.onViewCreated(view, savedInstanceState)
 
         miniCalendarMonth = view.findViewById(R.id.miniCalendarMonth)
+        miniCalPrev = view.findViewById(R.id.miniCalPrev)
+        miniCalNext = view.findViewById(R.id.miniCalNext)
+
+        miniCalPrev.setOnClickListener { jumpMonthMiniCalendar(-1) }
+        miniCalNext.setOnClickListener { jumpMonthMiniCalendar(+1) }
+
         setupMiniCalendar(view)
 
         // Ensure that the Edit button is wired to the callback in MainActivity.
@@ -194,6 +203,17 @@ class ReminderListFragment : Fragment(), Refreshable {
         val fmt = DateTimeFormatter.ofPattern("MMMM yyyy")
         miniCalendarMonth.text = anchor.format(fmt)
     }
+
+    private fun jumpMonthMiniCalendar(deltaMonths: Long) {
+        // safe anchor: always the 15th
+        miniCalAnchor = miniCalAnchor
+            .plusMonths(deltaMonths)
+            .withDayOfMonth(1)
+
+        miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+        updateMiniCalendarMonth(miniCalAnchor)
+    }
+
 
     private fun buildMiniCalendarDays(
         reminders: List<Reminder>,
