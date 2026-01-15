@@ -23,6 +23,9 @@ import java.util.Calendar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.recyclerview.widget.LinearSmoothScroller
+import android.view.GestureDetector
+import android.view.MotionEvent
+import kotlin.math.abs
 
 // For creating a new reminder
 private val argDateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -93,6 +96,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         miniCalNext.setOnClickListener { jumpMonthMiniCalendar(+1) }
 
         setupMiniCalendar(view)
+        attachMonthSwipe(view)
 
         reminderAdapter = ReminderAdapter().apply {
             // Ensure that the Edit button is wired to the callback in MainActivity.
@@ -268,6 +272,51 @@ class ReminderListFragment : Fragment(), Refreshable {
             DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third)
         }
     }
+
+    private fun attachMonthSwipe(view: View) {
+        val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
+        val header = view.findViewById<View>(R.id.miniCalendarHeader)
+
+        fun attach(target: View) {
+            val detector = GestureDetector(requireContext(),
+                object : GestureDetector.SimpleOnGestureListener() {
+
+                    private val SWIPE_DISTANCE = 120   // px
+                    private val SWIPE_VELOCITY = 1200  // px/sec
+
+                    override fun onDown(e: MotionEvent): Boolean = true
+
+                    override fun onFling(
+                        e1: MotionEvent?,
+                        e2: MotionEvent,
+                        velocityX: Float,
+                        velocityY: Float
+                    ): Boolean {
+                        if (e1 == null) return false
+
+                        val dx = e2.x - e1.x
+                        val dy = e2.y - e1.y
+
+                        if (abs(dy) > abs(dx)) return false
+                        if (abs(dx) < SWIPE_DISTANCE) return false
+                        if (abs(velocityX) < SWIPE_VELOCITY) return false
+
+                        if (dx < 0) jumpMonthMiniCalendar(+1) else jumpMonthMiniCalendar(-1)
+                        return true
+                    }
+                })
+
+            target.setOnTouchListener { _, ev ->
+                // If detector handled it, consume it.
+                detector.onTouchEvent(ev)
+            }
+        }
+
+        // attach to both (header is easy to swipe, rv is where finger usually is)
+        attach(header)
+        attach(rv)
+    }
+
 
 
     private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {
