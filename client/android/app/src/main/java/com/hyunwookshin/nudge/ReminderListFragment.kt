@@ -229,7 +229,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         // safe anchor: always the 15th
         miniCalAnchor = miniCalAnchor
             .plusMonths(deltaMonths)
-            .withDayOfMonth(1)
+            .withDayOfMonth(10)
 
         miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
         updateMiniCalendarMonth(miniCalAnchor)
