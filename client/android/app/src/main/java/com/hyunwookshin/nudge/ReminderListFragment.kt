@@ -93,10 +93,19 @@ class ReminderListFragment : Fragment(), Refreshable {
 
         setupMiniCalendar(view)
 
-        // Ensure that the Edit button is wired to the callback in MainActivity.
         reminderAdapter = ReminderAdapter().apply {
+            // Ensure that the Edit button is wired to the callback in MainActivity.
             reminderCallback?.let {
                 setReminderCallback(it)
+            }
+
+            setOnReminderClick { reminder ->
+                val date = reminderLocalDate(reminder) ?: return@setOnReminderClick
+
+                // Reanchor mini calendar to this reminder’s date
+                miniCalAnchor = date
+                updateMiniCalendarMonth(miniCalAnchor)
+                miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
             }
         }
         recyclerView = view.findViewById(R.id.recyclerView)
@@ -145,11 +154,18 @@ class ReminderListFragment : Fragment(), Refreshable {
         rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
         miniCalendarAdapter = MiniCalendarAdapter(
             onDayClick = { clickedDate ->
-                // 1) recenters the mini calendar so clicked date becomes middle row
-                miniCalAnchor = clickedDate
-                updateMiniCalendarMonth(miniCalAnchor)
-                miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+                // 1) If the clicked date is on different month,
+                // recenters the mini calendar so clicked date becomes the anchor
+                // Only re-anchor if user clicked a day in a different month than what we're showing
+                val sameMonth =
+                    (clickedDate.year == miniCalAnchor.year) &&
+                            (clickedDate.monthValue == miniCalAnchor.monthValue)
 
+                if (!sameMonth) {
+                    miniCalAnchor = clickedDate
+                    updateMiniCalendarMonth(miniCalAnchor)
+                    miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+                }
                 // 2) (optional) still scroll reminders list to that day
                 val idx = findFirstReminderIndexForDate(clickedDate)
                 if (idx >= 0) {

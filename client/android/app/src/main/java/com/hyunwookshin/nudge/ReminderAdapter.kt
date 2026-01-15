@@ -18,6 +18,11 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
     private var reminders: List<Reminder> = listOf()
     private var reminderCallback: ReminderCallback? = null
+    // For updating the mini calendar
+    private var onReminderClick: ((Reminder) -> Unit)? = null
+    fun setOnReminderClick(listener: (Reminder) -> Unit) {
+        onReminderClick = listener
+    }
 
     fun convert24HourTo12Hour(time24: String): String {
         // Define the input format
@@ -135,6 +140,11 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 linkButton.setOnClickListener(null)
             }
             cardRoot.background?.mutate()?.setTint(backgroundColor)
+
+            // For updating the mini calendar anchored to the reminder
+            itemView.setOnClickListener {
+                onReminderClick?.invoke(reminder)
+            }
         }
     }
 }
