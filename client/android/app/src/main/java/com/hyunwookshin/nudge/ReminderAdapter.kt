@@ -11,6 +11,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -126,7 +127,14 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 reminderCallback?.onCopyReminder(reminder)
             }
             deleteButton.setOnClickListener {
-                reminderCallback?.onDeleteReminder(reminder)
+                MaterialAlertDialogBuilder(itemView.context)
+                    .setTitle("Delete reminder?")
+                    .setMessage("This can’t be undone.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Delete") { _, _ ->
+                        reminderCallback?.onDeleteReminder(reminder)
+                    }
+                    .show()
             }
             val link = reminder.Link
             if (!link.isNullOrBlank()) {

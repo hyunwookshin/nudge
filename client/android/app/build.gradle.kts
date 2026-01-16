@@ -64,6 +64,10 @@ dependencies {
 
     // Date and time picker
     implementation("com.google.android.material:material:1.4.0")
+
+    // Dialog
+    implementation("com.google.android.material:material:1.12.0")
+
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
