@@ -227,12 +227,40 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     private fun jumpMonthMiniCalendar(deltaMonths: Long) {
         // safe anchor: always the 10th
-        miniCalAnchor = miniCalAnchor
-            .plusMonths(deltaMonths)
-            .withDayOfMonth(10)
+        val direction = if (deltaMonths > 0) +1 else -1
+        animateMiniCalendarMonthChange(direction) {
+            miniCalAnchor = miniCalAnchor
+                .plusMonths(deltaMonths)
+                .withDayOfMonth(10)
 
-        miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
-        updateMiniCalendarMonth(miniCalAnchor)
+            miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+            updateMiniCalendarMonth(miniCalAnchor)
+        }
+    }
+
+    private fun animateMiniCalendarMonthChange(direction: Int, apply: () -> Unit) {
+        // direction: +1 = next month (content moves left), -1 = prev month (content moves right)
+        val rv = view?.findViewById<RecyclerView>(R.id.miniCalendarRv) ?: return
+        val distance = (24 * rv.resources.displayMetrics.density) // 24dp
+
+        // slide out
+        rv.animate()
+            .translationX((-direction * distance))
+            .alpha(0.0f)
+            .setDuration(120)
+            .withEndAction {
+                // swap data
+                apply()
+
+                // jump to opposite side and slide in
+                rv.translationX = (direction * distance)
+                rv.animate()
+                    .translationX(0f)
+                    .alpha(1.0f)
+                    .setDuration(140)
+                    .start()
+            }
+            .start()
     }
 
 
