@@ -44,6 +44,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var miniCalendarMonth: TextView
     private lateinit var miniCalPrev: ImageButton
     private lateinit var miniCalNext: ImageButton
+    private lateinit var miniCalendarRv: RecyclerView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -155,8 +156,9 @@ class ReminderListFragment : Fragment(), Refreshable {
 
 
     private fun setupMiniCalendar(view: View) {
-        val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
-        rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
+        miniCalendarRv = view.findViewById(R.id.miniCalendarRv)
+        miniCalendarRv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
+
         miniCalendarAdapter = MiniCalendarAdapter(
             onDayClick = { clickedDate ->
                 // 1) If the clicked date is on different month,
@@ -184,7 +186,7 @@ class ReminderListFragment : Fragment(), Refreshable {
             onDayLongPress = { date, anchorView ->
                 showDayMenu(date, anchorView)
             })
-        rv.adapter = miniCalendarAdapter
+        miniCalendarRv.adapter = miniCalendarAdapter
     }
 
     private fun showDayMenu(date: LocalDate, anchor: View) {
@@ -227,8 +229,10 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     private fun jumpMonthMiniCalendar(deltaMonths: Long) {
         // safe anchor: always the 10th
-        val direction = if (deltaMonths > 0) +1 else -1
-        animateMiniCalendarMonthChange(direction) {
+        val slide = 36f * resources.displayMetrics.density // ~36dp
+        val dx = if (deltaMonths > 0) -slide else slide     // next month slides left
+
+        animateMiniCalendar(dx = dx, dy = 0f) {
             miniCalAnchor = miniCalAnchor
                 .plusMonths(deltaMonths)
                 .withDayOfMonth(10)
@@ -238,26 +242,54 @@ class ReminderListFragment : Fragment(), Refreshable {
         }
     }
 
-    private fun animateMiniCalendarMonthChange(direction: Int, apply: () -> Unit) {
-        // direction: +1 = next month (content moves left), -1 = prev month (content moves right)
-        val rv = view?.findViewById<RecyclerView>(R.id.miniCalendarRv) ?: return
-        val distance = (24 * rv.resources.displayMetrics.density) // 24dp
+    private fun jumpWeeksMiniCalendar(deltaWeeks: Long) {
+        val slide = 28f * resources.displayMetrics.density // ~28dp
+        val dy = if (deltaWeeks > 0) -slide else slide     // forward slides up
 
-        // slide out
-        rv.animate()
-            .translationX((-direction * distance))
-            .alpha(0.0f)
-            .setDuration(120)
+        animateMiniCalendar(dx = 0f, dy = dy) {
+            miniCalAnchor = miniCalAnchor.plusWeeks(deltaWeeks)
+
+            miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+            updateMiniCalendarMonth(miniCalAnchor)
+        }
+    }
+
+    private fun animateMiniCalendar(
+        dx: Float,
+        dy: Float,
+        update: () -> Unit
+    ) {
+        if (!::miniCalendarRv.isInitialized) {
+            update()
+            return
+        }
+
+        val v = miniCalendarRv
+        val durOut = 120L
+        val durIn = 140L
+
+        // cancel any in-flight animation
+        v.animate().cancel()
+
+        v.animate()
+            .translationX(dx)
+            .translationY(dy)
+            .alpha(0f)
+            .setDuration(durOut)
             .withEndAction {
-                // swap data
-                apply()
+                // Update content while "hidden"
+                update()
 
-                // jump to opposite side and slide in
-                rv.translationX = (direction * distance)
-                rv.animate()
+                // Start slightly from the other side and animate in
+                v.translationX = -dx
+                v.translationY = -dy
+                v.alpha = 0f
+
+                v.animate()
                     .translationX(0f)
-                    .alpha(1.0f)
-                    .setDuration(140)
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(durIn)
                     .start()
             }
             .start()
@@ -309,8 +341,8 @@ class ReminderListFragment : Fragment(), Refreshable {
             val detector = GestureDetector(requireContext(),
                 object : GestureDetector.SimpleOnGestureListener() {
 
-                    private val SWIPE_DISTANCE = 120   // px
-                    private val SWIPE_VELOCITY = 1200  // px/sec
+                    private val SWIPE_DISTANCE = 80   // px
+                    private val SWIPE_VELOCITY = 800  // px/sec
 
                     override fun onDown(e: MotionEvent): Boolean = true
 
@@ -325,11 +357,29 @@ class ReminderListFragment : Fragment(), Refreshable {
                         val dx = e2.x - e1.x
                         val dy = e2.y - e1.y
 
-                        if (abs(dy) > abs(dx)) return false
-                        if (abs(dx) < SWIPE_DISTANCE) return false
-                        if (abs(velocityX) < SWIPE_VELOCITY) return false
+                        val absDx = abs(dx)
+                        val absDy = abs(dy)
 
-                        if (dx < 0) jumpMonthMiniCalendar(+1) else jumpMonthMiniCalendar(-1)
+                        // Horizontal month swipe
+                        if (absDx > absDy) {
+                            if (absDx < SWIPE_DISTANCE) return false
+                            if (abs(velocityX) < SWIPE_VELOCITY) return false
+
+                            if (dx < 0) jumpMonthMiniCalendar(+1) else jumpMonthMiniCalendar(-1)
+                            return true
+                        }
+
+                        // Vertical 2-week swipe
+                        if (absDy < SWIPE_DISTANCE) return false
+                        if (abs(velocityY) < SWIPE_VELOCITY) return false
+
+                        if (dy < 0) {
+                            // swipe up => go forward 2 weeks
+                            jumpWeeksMiniCalendar(+2)
+                        } else {
+                            // swipe down => go back 2 weeks
+                            jumpWeeksMiniCalendar(-2)
+                        }
                         return true
                     }
                 })
