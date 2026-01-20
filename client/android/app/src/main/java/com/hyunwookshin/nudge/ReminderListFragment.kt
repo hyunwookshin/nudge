@@ -46,6 +46,12 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var miniCalNext: ImageButton
     private lateinit var miniCalendarRv: RecyclerView
 
+    // Pills
+    private enum class Period { CURRENT, ALL_TIME }
+    private var period: Period = Period.CURRENT
+    private lateinit var periodPill: com.google.android.material.button.MaterialButton
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -68,8 +74,44 @@ class ReminderListFragment : Fragment(), Refreshable {
                 .addToBackStack(null)
                 .commit()
         }
+        periodPill = view.findViewById(R.id.periodPill)
+        renderPeriodPill()
 
+        periodPill.setOnClickListener { anchor ->
+            showPeriodMenu(anchor)
+        }
         return view
+    }
+
+
+    private fun renderPeriodPill() {
+        periodPill.text = when (period) {
+            Period.CURRENT -> "Current"
+            Period.ALL_TIME -> "All Time"
+        }
+    }
+
+    private fun showPeriodMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, "Current")
+        popup.menu.add(0, 2, 1, "All Time")
+
+        popup.setOnMenuItemClickListener { item ->
+            val newPeriod = when (item.itemId) {
+                1 -> Period.CURRENT
+                2 -> Period.ALL_TIME
+                else -> period
+            }
+
+            if (newPeriod != period) {
+                period = newPeriod
+                renderPeriodPill()
+                fetchReminders()
+            }
+            true
+        }
+
+        popup.show()
     }
 
     override fun refresh() {
@@ -128,7 +170,11 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     private fun fetchReminders() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
-        apiService.getReminders().enqueue(object : Callback<ReminderResponse> {
+        val call: Call<ReminderResponse> = when (period) {
+            Period.CURRENT -> apiService.getReminders()        // current only
+            Period.ALL_TIME -> apiService.getAllReminders()    // all reminders
+        }
+        call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
                 if (!isAdded || view == null) return
                 progressBar.visibility = View.GONE
@@ -140,6 +186,15 @@ class ReminderListFragment : Fragment(), Refreshable {
                     reminderAdapter.setReminders(reminders)
                     miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
                     updateMiniCalendarMonth(miniCalAnchor)
+                    // Also scroll to the anchor date
+                    val idx = findFirstReminderIndexOnOrAfter(miniCalAnchor)
+                    if (idx >= 0) {
+                        recyclerView.post {
+                            val offsetPx =
+                                (recyclerView.resources.displayMetrics.density).toInt() // 32dp
+                            recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                        }
+                    }
 
                 } else {
                     Snackbar.make(requireView(), "Failed to load reminders", Snackbar.LENGTH_SHORT).show()
