@@ -66,9 +66,7 @@ class ReminderListFragment : Fragment(), Refreshable {
 
         addEventText = view.findViewById(R.id.addEventText)
         addEventText.setOnClickListener {
-            val fragment = ReminderFragment.newInstanceForDate(
-                LocalDate.now().format(argDateFmt)
-            )
+            val fragment = ReminderFragment.newInstance()
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)

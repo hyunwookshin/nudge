@@ -21,6 +21,48 @@
         android:layout_margin="8dp"
         android:textColor="?attr/colorOnSurface"/>
 
+
+    <!-- AI Quick Add -->
+    <LinearLayout
+        android:id="@+id/aiBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_ai_gradient">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI quick add"
+            android:textStyle="bold"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/aiInputEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Generate using AI… e.g. “Pay rent on Jan 5 at 9am”"
+            android:textColor="@android:color/white"
+            android:background="@android:color/transparent"
+            android:inputType="textCapSentences|textMultiLine"
+            android:minLines="2"
+            android:maxLines="4" />
+
+        <Button
+            android:id="@+id/aiGenerateButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Generate"
+            android:background="@drawable/rounded_corner"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#923ECD" />
+    </LinearLayout>
+
     <AutoCompleteTextView
         android:id="@+id/titleEditText"
         android:layout_width="match_parent"
@@ -120,44 +162,4 @@
             android:layout_gravity="center" />
     </LinearLayout>
 
-    <!-- AI Quick Add -->
-    <LinearLayout
-    android:id="@+id/aiBox"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="12dp"
-    android:padding="12dp"
-    android:orientation="vertical"
-    android:background="@drawable/bg_ai_gradient">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="AI quick add"
-        android:textStyle="bold"
-        android:textColor="@color/colorTextPrimary"
-        android:textSize="14sp" />
-
-    <EditText
-        android:id="@+id/aiInputEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="Generate using AI… e.g. “Pay rent on Jan 5 at 9am”"
-        android:textColor="@android:color/white"
-        android:background="@android:color/transparent"
-        android:inputType="textCapSentences|textMultiLine"
-        android:minLines="2"
-        android:maxLines="4" />
-
-    <Button
-        android:id="@+id/aiGenerateButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="Generate"
-        android:background="@drawable/rounded_corner"
-        android:backgroundTint="#FFFFFF"
-        android:textColor="#923ECD" />
-    </LinearLayout>
 </LinearLayout>

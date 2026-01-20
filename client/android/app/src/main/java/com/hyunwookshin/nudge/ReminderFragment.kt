@@ -34,6 +34,7 @@ class ReminderFragment : Fragment() {
     private lateinit var idEditText: EditText
     private lateinit var aiInputEditText: EditText
     private lateinit var aiGenerateButton: Button
+    private lateinit var aiBox: LinearLayout
 
     private lateinit var topLoading: com.google.android.material.progressindicator.LinearProgressIndicator
     private var inFlightCount = 0
@@ -57,6 +58,13 @@ class ReminderFragment : Fragment() {
             val fragment = ReminderFragment()
             val args = Bundle()
             args.putParcelable(ARG_REMINDER, reminder)
+            fragment.arguments = args
+            return fragment
+        }
+
+        fun newInstance(): ReminderFragment {
+            val fragment = ReminderFragment()
+            val args = Bundle()
             fragment.arguments = args
             return fragment
         }
@@ -97,6 +105,7 @@ class ReminderFragment : Fragment() {
         snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
         idEditText = view.findViewById(R.id.idEditText)
         aiInputEditText = view.findViewById(R.id.aiInputEditText)
+        aiBox = view.findViewById(R.id.aiBox)
         aiGenerateButton = view.findViewById(R.id.aiGenerateButton)
         aiGenerateButton.setOnClickListener { generateReminderUsingAI() }
 
@@ -125,10 +134,13 @@ class ReminderFragment : Fragment() {
             pageTitle.text = "Add Reminder"
             selectedDate = prefillDate
             dateButton.text = prefillDate
+            aiInputEditText.hint = "Generate using AI for $selectedDate"
         }
 
         // Prepopulation when user clicks "Edit" from the list view.
         reminder?.let {
+            // hide ai box since user is editing
+            aiBox.visibility = View.GONE
             pageTitle.text = "Edit Reminder"
             titleEditText.setText(it.Title)
             descriptionEditText.setText(it.Description)
@@ -333,7 +345,7 @@ class ReminderFragment : Fragment() {
     }
 
     private fun generateReminderUsingAI() {
-        val text = aiInputEditText.text.toString().trim()
+        var text = aiInputEditText.text.toString().trim()
         val key = passwordEditText.text.toString().trim()
 
         if (text.isEmpty()) {
@@ -348,6 +360,13 @@ class ReminderFragment : Fragment() {
         aiGenerateButton.isEnabled = false
 
         val apiService = ApiClient.getClient().create(ApiService::class.java)
+        // Add date information if needed.
+        // Prepopulation when user long-pressed date on mini calendar
+        val prefillDate = arguments?.getString(ARG_PREFILL_DATE)
+        if (!prefillDate.isNullOrBlank()) {
+            selectedDate = prefillDate
+        }
+        text += " on $selectedDate."
         val req = AddReminderAiRequest(Text = text, Key = key)
 
         beginLoading()
