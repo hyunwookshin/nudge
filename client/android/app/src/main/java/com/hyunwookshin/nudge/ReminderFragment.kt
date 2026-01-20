@@ -20,6 +20,7 @@ import java.util.*
 
 class ReminderFragment : Fragment() {
 
+    private lateinit var pageTitle: TextView
     private lateinit var titleEditText: AutoCompleteTextView
     private lateinit var descriptionEditText: AutoCompleteTextView
     private lateinit var reminders: List<Reminder>
@@ -33,6 +34,9 @@ class ReminderFragment : Fragment() {
     private lateinit var idEditText: EditText
     private lateinit var aiInputEditText: EditText
     private lateinit var aiGenerateButton: Button
+
+    private lateinit var topLoading: com.google.android.material.progressindicator.LinearProgressIndicator
+    private var inFlightCount = 0
 
     private var selectedDate: String? = null          // yyyy-MM-dd
     private var selectedTime: String? = null          // HH:mm:00
@@ -80,6 +84,8 @@ class ReminderFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_reminder, container, false)
+        topLoading = view.findViewById(R.id.topLoading)
+        pageTitle = view.findViewById(R.id.pageTitle)
         titleEditText = view.findViewById(R.id.titleEditText)
         descriptionEditText = view.findViewById(R.id.descriptionEditText)
         dateButton = view.findViewById(R.id.dateButton)
@@ -116,12 +122,14 @@ class ReminderFragment : Fragment() {
         // Prepopulation when user long-pressed date on mini calendar
         val prefillDate = arguments?.getString(ARG_PREFILL_DATE)
         if (!prefillDate.isNullOrBlank()) {
+            pageTitle.text = "Add Reminder"
             selectedDate = prefillDate
             dateButton.text = prefillDate
         }
 
         // Prepopulation when user clicks "Edit" from the list view.
         reminder?.let {
+            pageTitle.text = "Edit Reminder"
             titleEditText.setText(it.Title)
             descriptionEditText.setText(it.Description)
             linkEditText.setText(it.Link)
@@ -161,8 +169,8 @@ class ReminderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val showRemindersButton: Button = view.findViewById(R.id.showRemindersButton)
-        showRemindersButton.setOnClickListener { callback?.onShowReminders() }
+        val goBackButton: Button = view.findViewById(R.id.goBackButton)
+        goBackButton.setOnClickListener { callback?.onAbortEditReminder() }
     }
 
     private fun showDatePicker() {
@@ -185,6 +193,21 @@ class ReminderFragment : Fragment() {
             year, month, day
         )
         datePicker.show()
+    }
+
+    private fun beginLoading() {
+        inFlightCount++
+        if (inFlightCount == 1) {
+            topLoading.visibility = View.VISIBLE
+            topLoading.isIndeterminate = true
+        }
+    }
+
+    private fun endLoading() {
+        if (inFlightCount > 0) inFlightCount--
+        if (inFlightCount == 0) {
+            topLoading.visibility = View.GONE
+        }
     }
 
     private fun showTimePicker() {
@@ -251,10 +274,20 @@ class ReminderFragment : Fragment() {
     private fun sendReminder(reminder: Reminder) {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call = apiService.addReminder(reminder)
+        beginLoading()
         call.enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                endLoading()
                 if (response.isSuccessful) {
-                    Snackbar.make(requireView(), "Reminder added successfully", Snackbar.LENGTH_SHORT).show()
+                    if (callback != null && callback is ReminderCallback?) {
+                        callback?.onReminderUpdated()
+                    } else {
+                        Snackbar.make(
+                            requireView(),
+                            "Reminder added successfully",
+                            Snackbar.LENGTH_SHORT
+                        ).show()
+                    }
                 } else {
                     Snackbar.make(requireView(), "Failed to add reminder", Snackbar.LENGTH_SHORT).show()
                 }
@@ -274,9 +307,11 @@ class ReminderFragment : Fragment() {
     private fun fetchAllReminders() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call = apiService.getAllReminders()
+        beginLoading()
 
         call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
+                endLoading()
                 if (!isAdded) return
                 if (response.isSuccessful) {
                     reminders = response.body()?.reminders ?: emptyList()
@@ -315,19 +350,29 @@ class ReminderFragment : Fragment() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val req = AddReminderAiRequest(Text = text, Key = key)
 
+        beginLoading()
         apiService.addReminderAI(req).enqueue(object : Callback<AddReminderAiResponse> {
             override fun onResponse(
                 call: Call<AddReminderAiResponse>,
                 response: Response<AddReminderAiResponse>
             ) {
                 aiGenerateButton.isEnabled = true
-
+                endLoading()
                 if (!response.isSuccessful || response.body() == null) {
                     Snackbar.make(requireView(), "AI generate failed (${response.code()})", Snackbar.LENGTH_SHORT).show()
                     return
                 }
-
-                Snackbar.make(requireView(), "Added via AI.", Snackbar.LENGTH_SHORT).show()
+                if (response.isSuccessful) {
+                    if (callback != null && callback is ReminderCallback?) {
+                        callback?.onReminderUpdated()
+                    } else {
+                        Snackbar.make(
+                            requireView(),
+                            "Reminder added successfully via AI",
+                            Snackbar.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
 
             override fun onFailure(call: Call<AddReminderAiResponse>, t: Throwable) {

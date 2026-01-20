@@ -4,6 +4,23 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/topLoading"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/pageTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="26sp"
+        android:text="Add Reminder"
+        android:layout_margin="8dp"
+        android:textColor="?attr/colorOnSurface"/>
+
     <AutoCompleteTextView
         android:id="@+id/titleEditText"
         android:layout_width="match_parent"
@@ -94,10 +111,10 @@
             android:text="Save" />
 
         <Button
-            android:id="@+id/showRemindersButton"
+            android:id="@+id/goBackButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Show Reminders"
+            android:text="Go Back"
             android:layout_margin="4dp"
             android:background="@drawable/rounded_corner"
             android:layout_gravity="center" />

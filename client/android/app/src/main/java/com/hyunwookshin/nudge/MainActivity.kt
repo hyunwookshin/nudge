@@ -44,6 +44,16 @@ class MainActivity : AppCompatActivity(), ReminderCallback {
         onEditReminder(reminder)
     }
 
+    override fun onReminderUpdated() {
+        supportFragmentManager
+            .popBackStack()
+    }
+
+    override fun onAbortEditReminder() {
+        supportFragmentManager
+            .popBackStack()
+    }
+
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)

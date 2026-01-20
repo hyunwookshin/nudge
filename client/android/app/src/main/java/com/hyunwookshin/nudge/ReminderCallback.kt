@@ -7,4 +7,8 @@ interface ReminderCallback {
     fun onCopyReminder(reminder: Reminder)
 
     fun onDeleteReminder(reminder: Reminder)
+    
+    fun onReminderUpdated()
+
+    fun onAbortEditReminder()
 }
