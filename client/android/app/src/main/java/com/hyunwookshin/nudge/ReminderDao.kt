@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 
 @Dao
 interface ReminderDao {
@@ -16,4 +17,10 @@ interface ReminderDao {
 
     @Query("DELETE FROM reminders")
     suspend fun clearAll()
+
+    @Transaction
+    suspend fun replaceAll(items: List<ReminderEntity>) {
+        clearAll()
+        upsertAll(items)
+    }
 }

@@ -224,7 +224,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     // cache to DB
                     // Save to DB
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                        db.reminderDao().upsertAll(reminders.map { it.toEntity() })
+                        db.reminderDao().replaceAll(reminders.map { it.toEntity() })
                     }
 
                 } else {
