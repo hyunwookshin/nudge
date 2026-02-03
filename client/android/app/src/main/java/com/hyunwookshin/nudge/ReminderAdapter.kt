@@ -132,6 +132,10 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 editButton.visibility = View.GONE
                 copyButton.visibility = View.GONE
                 deleteButton.visibility = View.GONE
+            } else {
+                editButton.visibility = View.VISIBLE
+                copyButton.visibility = View.VISIBLE
+                deleteButton.visibility = View.VISIBLE
             }
             editButton.setOnClickListener {
                 reminderCallback?.onEditReminder(reminder)
