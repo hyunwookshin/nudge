@@ -25,6 +25,14 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         onReminderClick = listener
     }
 
+    //offline mode
+    private var readOnly = false
+
+    fun setReadOnly(readOnly: Boolean) {
+        this.readOnly = readOnly
+        notifyDataSetChanged()
+    }
+
     fun convert24HourTo12Hour(time24: String): String {
         // Define the input format
         val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
@@ -56,7 +64,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     }
 
     override fun onBindViewHolder(holder: ReminderViewHolder, position: Int) {
-        holder.bind(reminders[position])
+        holder.bind(reminders[position], readOnly)
     }
 
     override fun getItemCount(): Int = reminders.size
@@ -97,7 +105,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
         private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
 
-        fun bind(reminder: Reminder) {
+        fun bind(reminder: Reminder, readOnly: Boolean) {
             title.text = reminder.Title
             description.text = reminder.Description
             time.text = convert24HourTo12Hour(reminder.Time)
@@ -119,6 +127,11 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 ContextCompat.getColor(itemView.context, R.color.high_priority)
             } else {
                 ContextCompat.getColor(itemView.context, R.color.low_priority)
+            }
+            if (readOnly) {
+                editButton.visibility = View.GONE
+                copyButton.visibility = View.GONE
+                deleteButton.visibility = View.GONE
             }
             editButton.setOnClickListener {
                 reminderCallback?.onEditReminder(reminder)

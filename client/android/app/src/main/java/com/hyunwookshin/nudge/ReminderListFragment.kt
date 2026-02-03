@@ -26,6 +26,10 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import android.view.GestureDetector
 import android.view.MotionEvent
 import kotlin.math.abs
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // For creating a new reminder
 private val argDateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -51,6 +55,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     private var period: Period = Period.CURRENT
     private lateinit var periodPill: com.google.android.material.button.MaterialButton
 
+    // DB for caching
+    private lateinit var db: AppDb
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -158,12 +164,33 @@ class ReminderListFragment : Fragment(), Refreshable {
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
         progressBar.visibility = View.VISIBLE
+        db = AppDb.get(requireContext())
+        loadCachedReminders()
         fetchReminders()
     }
 
     override fun onDetach() {
         super.onDetach()
         reminderCallback = null
+    }
+
+    private fun loadCachedReminders() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val cached = withContext(Dispatchers.IO) {
+                db.reminderDao().getAll().map { it.toDomain() }
+            }
+
+            if (cached.isNotEmpty()) {
+                showOffline(true)
+
+                currentReminders = cached.sortedBy { it.Time }
+                reminderAdapter.setReminders(currentReminders)
+                miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+                updateMiniCalendarMonth(miniCalAnchor)
+
+                progressBar.visibility = View.GONE
+            }
+        }
     }
 
     private fun fetchReminders() {
@@ -180,6 +207,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     val reminders = (response.body()?.reminders ?: emptyList())
                         .sortedBy { it.Time }
                     Log.d("ReminderListFragment", "Reminders fetched: ${reminders.size}")
+                    showOffline(false)
                     currentReminders = reminders
                     reminderAdapter.setReminders(reminders)
                     miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
@@ -193,8 +221,14 @@ class ReminderListFragment : Fragment(), Refreshable {
                             recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
                         }
                     }
+                    // cache to DB
+                    // Save to DB
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                        db.reminderDao().upsertAll(reminders.map { it.toEntity() })
+                    }
 
                 } else {
+                    showOffline(true)
                     Snackbar.make(requireView(), "Failed to load reminders", Snackbar.LENGTH_SHORT).show()
                 }
             }
@@ -203,6 +237,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                 if (!isAdded || view == null) return
                 Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
                 progressBar.visibility = View.GONE
+                showOffline(true)
             }
         })
     }
@@ -448,7 +483,13 @@ class ReminderListFragment : Fragment(), Refreshable {
         attach(rv)
     }
 
-
+    private fun showOffline(isOffline: Boolean) {
+        val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+        val base = "Today is " + LocalDate.now().format(fmt)
+        todayText.text = if (isOffline) "$base   •   Offline" else base
+        addEventText.visibility = if (isOffline) View.GONE else View.VISIBLE
+        reminderAdapter.setReadOnly(isOffline)
+    }
 
     private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {
         val lm = layoutManager as? LinearLayoutManager ?: run {
