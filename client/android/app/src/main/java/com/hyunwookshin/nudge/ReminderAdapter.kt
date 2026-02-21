@@ -1,5 +1,6 @@
 package com.hyunwookshin.nudge
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -170,6 +172,31 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             itemView.setOnClickListener {
                 onReminderClick?.invoke(reminder)
             }
+
+            itemView.setOnLongClickListener {
+                copyReminderToClipboard(itemView.context, reminder)
+                true
+            }
         }
+    }
+
+    private fun copyReminderToClipboard(context: Context, r: Reminder) {
+        val clipboard =
+            context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+
+        val displayTime = convert24HourTo12Hour(r.Time) // matches card
+        val link = r.Link.orEmpty()
+
+        val text = buildString {
+            appendLine(r.Title)
+            appendLine(r.Description)
+            appendLine(displayTime)
+            if (link.isNotBlank()) appendLine(link)
+        }.trim()
+
+        val clip = android.content.ClipData.newPlainText("Reminder", text)
+        clipboard.setPrimaryClip(clip)
+
+        Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
     }
 }
