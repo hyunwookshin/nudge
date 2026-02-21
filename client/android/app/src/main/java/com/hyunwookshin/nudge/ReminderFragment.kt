@@ -17,6 +17,14 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 
 class ReminderFragment : Fragment() {
 
@@ -49,6 +57,20 @@ class ReminderFragment : Fragment() {
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     private var callback: ReminderCallback? = null
+
+    private lateinit var voiceButton: ImageButton
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var speechIntent: Intent? = null
+    private var isListening = false
+    private val micPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                startListening()
+            } else {
+                if (!isAdded) return@registerForActivityResult
+                view?.let { Snackbar.make(it, "Mic permission denied", Snackbar.LENGTH_SHORT).show() }
+            }
+        }
 
     companion object {
         private const val ARG_REMINDER = "reminder"
@@ -108,6 +130,72 @@ class ReminderFragment : Fragment() {
         aiBox = view.findViewById(R.id.aiBox)
         aiGenerateButton = view.findViewById(R.id.aiGenerateButton)
         aiGenerateButton.setOnClickListener { generateReminderUsingAI() }
+        voiceButton = view.findViewById(R.id.voiceButton)
+        voiceButton.setOnClickListener { onVoiceClick() }
+        if (!SpeechRecognizer.isRecognitionAvailable(requireContext())) {
+            voiceButton.isEnabled = false
+        }
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
+
+        // Speech
+        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            // Optional: prompt shown in some UIs
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your reminder…")
+        }
+        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                isListening = true
+                voiceButton.setImageResource(R.drawable.ic_stop)
+
+                // see color/mic_tint.xml
+                voiceButton.isActivated = true
+                voiceButton.contentDescription = "Stop recording"
+            }
+
+            override fun onResults(results: Bundle?) {
+                val matches = results
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?: arrayListOf()
+
+                val text = matches.firstOrNull().orEmpty()
+                if (text.isNotBlank()) {
+                    // OVERRIDE
+                    aiInputEditText.setText(text)
+                    aiInputEditText.setSelection(aiInputEditText.text.length)
+                }
+                stopListeningUi()
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {
+                // Optional: show partial transcription live
+                val partial = partialResults
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                if (!partial.isNullOrBlank()) {
+                    aiInputEditText.setText(partial)
+                    aiInputEditText.setSelection(aiInputEditText.text.length)
+                }
+            }
+
+            override fun onError(error: Int) {
+                stopListeningUi()
+                if (!isAdded) return
+                view?.let { Snackbar.make(it, "Speech error: $error", Snackbar.LENGTH_SHORT).show() }
+            }
+
+            override fun onEndOfSpeech() {
+                // Recognizer stops on its own; results will come next
+            }
+
+            // Unused callbacks
+            override fun onBeginningOfSpeech() {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+            override fun onRmsChanged(rmsdB: Float) {}
+        })
 
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
@@ -306,6 +394,7 @@ class ReminderFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
+                endLoading()
                 Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
             }
         })
@@ -337,6 +426,7 @@ class ReminderFragment : Fragment() {
 
             override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
                 if (!isAdded) return
+                endLoading()
                 view?.let { v ->
                     Snackbar.make(v, "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
                 }
@@ -366,7 +456,7 @@ class ReminderFragment : Fragment() {
         if (!prefillDate.isNullOrBlank()) {
             selectedDate = prefillDate
         }
-        text += " on $selectedDate."
+        selectedDate?.let { text += " on $it." }
         val req = AddReminderAiRequest(Text = text, Key = key)
 
         beginLoading()
@@ -396,9 +486,43 @@ class ReminderFragment : Fragment() {
 
             override fun onFailure(call: Call<AddReminderAiResponse>, t: Throwable) {
                 aiGenerateButton.isEnabled = true
+                endLoading()
                 Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun onVoiceClick() {
+        if (isListening) {
+            speechRecognizer?.stopListening()
+            stopListeningUi()
+            return
+        }
+
+        val granted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (granted) startListening()
+        else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    private fun startListening() {
+        try {
+            speechRecognizer?.startListening(speechIntent)
+        } catch (e: Exception) {
+            Snackbar.make(requireView(), "Cannot start speech: ${e.message}", Snackbar.LENGTH_SHORT).show()
+            stopListeningUi()
+        }
+    }
+
+    private fun stopListeningUi() {
+        isListening = false
+        voiceButton.setImageResource(R.drawable.ic_mic)
+
+        // see color/mic_tint.xml
+        voiceButton.isActivated = false
     }
 
     private fun setupAutoComplete() {
@@ -410,5 +534,13 @@ class ReminderFragment : Fragment() {
 
         titleEditText.setAdapter(titleAdapter)
         descriptionEditText.setAdapter(descriptionAdapter)
+    }
+
+    override fun onDestroyView() {
+        speechRecognizer?.cancel()
+        speechRecognizer?.destroy()
+        speechRecognizer = null
+        speechIntent = null
+        super.onDestroyView()
     }
 }
