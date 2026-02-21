@@ -429,8 +429,8 @@ class ReminderListFragment : Fragment(), Refreshable {
             val detector = GestureDetector(requireContext(),
                 object : GestureDetector.SimpleOnGestureListener() {
 
-                    private val SWIPE_DISTANCE = 30   // px
-                    private val SWIPE_VELOCITY = 300  // px/sec
+                    private val SWIPE_DISTANCE = 5   // px
+                    private val SWIPE_VELOCITY = 50  // px/sec
 
                     override fun onDown(e: MotionEvent): Boolean = true
 
