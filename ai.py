@@ -2,6 +2,10 @@ from openai import OpenAI
 from datetime import datetime, timezone
 import json
 import pytz
+from urllib.parse import quote_plus
+
+def maps_link_from_location(location: str) -> str:
+        return f"https://www.google.com/maps/search/?api=1&query={quote_plus(location)}"
 
 def getCurrentUTCTime():
     return datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -38,9 +42,10 @@ def parse_reminder_from_text_openai(free_text: str, cfg) -> dict:
                 "Description": {"type": "string"},
                 "Date": {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}$"},
                 "Time": {"type": "string", "pattern": r"^\d{2}:\d{2}:\d{2}$"},
-                "Link": {"type": "string"}
+                "Link": {"type": "string"},
+                "Address": {"type": "string"}
             },
-            "required": ["Title", "Description", "Date", "Time", "Link"]
+            "required": ["Title", "Description", "Date", "Time", "Link", "Address"]
         }
     }
 
@@ -57,6 +62,7 @@ Rules:
 - If the user doesn't provide a link, set Link to "".
 - Infer a concise Title and a helpful Description.
 - If the text is ambiguous, make the best reasonable assumption (do not ask questions).
+- Address is optional, and likely not provided
 """
 
     # Responses API w/ Structured Outputs (JSON schema) :contentReference[oaicite:3]{index=3}
@@ -85,6 +91,9 @@ Rules:
         out_text = resp.output[0].content[0].text
 
     data = json.loads(out_text)
+
+    if "Address" in data and data["Address"] is not None:
+        data["Link"] = maps_link_from_location(data["Address"])
 
     # Guarantee Link exists
     if "Link" not in data or data["Link"] is None:
