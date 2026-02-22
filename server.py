@@ -11,6 +11,7 @@ from waitress import serve
 from spell import spell
 from models import reminder, config
 from data import yamldatasource
+from auth import auth
 
 app = Flask(__name__)
 
@@ -35,8 +36,10 @@ def get_reminders():
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
+    user, err = auth.require_user(cfg)
+    if err: return err
 
-    datasource = yamldatasource.YamlDataSource(cfg)
+    datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     for r in reminders:
         if cfg.getTimeZone():
@@ -70,8 +73,10 @@ def delete_reminder():
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
+    user, err = auth.require_user(cfg)
+    if err: return err
 
-    datasource = yamldatasource.YamlDataSource(cfg)
+    datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     filtered = []
     for r in reminders:
@@ -93,7 +98,10 @@ def add_reminder():
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
-    datasource = yamldatasource.YamlDataSource(cfg)
+    user, err = auth.require_user(cfg)
+    if err: return err
+
+    datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -156,8 +164,10 @@ def add_reminder_ai():
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
+    user, err = auth.require_user(cfg)
+    if err: return err
 
-    datasource = yamldatasource.YamlDataSource(cfg)
+    datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 

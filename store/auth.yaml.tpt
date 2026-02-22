@@ -1,0 +1,5 @@
+users:
+  test_user:
+    tokens:
+      - token_sha256: "<token-sha>"
+        created: "2026-02-22T00:00:00Z"

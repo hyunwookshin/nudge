@@ -3,3 +3,4 @@ backup.sh
 secure.key
 .DS_store
 tmp.sh
+__pycache__

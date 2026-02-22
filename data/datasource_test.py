@@ -28,15 +28,15 @@ class TestYamlDataSource(unittest.TestCase):
     def setUp(self):
         # Mock configuration
         self.config = TestConfig()
-        self.data_source = yamldatasource.YamlDataSource(self.config)
+        self.data_source = yamldatasource.YamlDataSource(self.config, "test_user")
 
     def tearDown(self):
-        with open(self.config.getStorePath() + "/reminders.yaml", "w") as f:
+        with open(self.config.getStorePath() + "/users/test_user/reminders.yaml", "w") as f:
             f.write('')
 
     def test_loadReminders(self):
         # Test loading reminders from YAML data
-        with open(self.config.getStorePath() + "/reminders.yaml", "w") as f:
+        with open(self.config.getStorePath() + "/users/test_user/reminders.yaml", "w") as f:
             f.write(sample_yaml_data)
 
         reminders = self.data_source.loadReminders()
@@ -64,7 +64,7 @@ class TestYamlDataSource(unittest.TestCase):
 
         # Test storing reminders to YAML file
         self.data_source.storeReminders([r])
-        with open(self.config.getStorePath() + "/reminders.yaml", "r") as f:
+        with open(self.config.getStorePath() + "/users/test_user/reminders.yaml", "r") as f:
             yaml_data_written = f.read()
 
         reminders_from_yaml = yaml.safe_load(yaml_data_written)

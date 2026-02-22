@@ -7,14 +7,22 @@ FILE_NAME = "reminders.yaml"
 
 class YamlDataSource:
 
-    def __init__(self, config):
+    def __init__(self, config, user=""):
         self.config = config
+        self.user = user
 
     def getYamlReminderPath(self):
-        return self.config.getStorePath() + "/" + FILE_NAME
+        base = self.config.getStorePath()
+        user_dir = os.path.join(base, "users")
+        user_dir = os.path.join(user_dir, self.user)
+        os.makedirs(user_dir, exist_ok=True)
+        return os.path.join(user_dir, FILE_NAME)
 
     def loadReminders(self):
-        with open(self.getYamlReminderPath(), "r") as f:
+        path = self.getYamlReminderPath()
+        if not os.path.exists(path):
+            return []
+        with open(path, "r") as f:
             infos = yaml.safe_load(f.read().strip())
         return [ reminder.Reminder(info) for info in infos ]
 
