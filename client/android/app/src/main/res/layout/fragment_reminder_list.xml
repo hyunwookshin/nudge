@@ -12,13 +12,19 @@
         android:padding="12dp">
 
         <!-- LEFT: Today -->
+        <!-- LEFT: Today / Status -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/leftHeader"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
             android:padding="12dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/overflowButton">
 
             <TextView
                 android:id="@+id/todayText"
@@ -42,20 +48,18 @@
 
 
         <!-- RIGHT: Add Event -->
-        <TextView
-            android:id="@+id/addEventText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Event"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
+        <ImageButton
+            android:id="@+id/overflowButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_more_vert_24"
+            android:contentDescription="Menu"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="?attr/colorOnSurface"
+            android:padding="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

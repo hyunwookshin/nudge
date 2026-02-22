@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,7 +39,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var todayText: TextView
     private lateinit var progressBar: ProgressBar
     private var reminderCallback: ReminderCallback? = null
-    private lateinit var addEventText: TextView
+    private lateinit var overflowButton: ImageButton
     // Manage state
     private lateinit var recyclerView: RecyclerView
     private var currentReminders: List<Reminder> = emptyList()
@@ -70,14 +69,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         progressBar = view.findViewById(R.id.progressBar)
         val calendar = Calendar.getInstance()
 
-        addEventText = view.findViewById(R.id.addEventText)
-        addEventText.setOnClickListener {
-            val fragment = ReminderFragment.newInstance()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
-        }
+        overflowButton = view.findViewById(R.id.overflowButton)
+        overflowButton.setOnClickListener { showOverflowMenu() }
         periodPill = view.findViewById(R.id.periodPill)
         renderPeriodPill()
 
@@ -96,7 +89,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun showPeriodMenu(anchor: View) {
-        val popup = PopupMenu(requireContext(), anchor)
+        val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "Current")
         popup.menu.add(0, 2, 1, "All Time")
 
@@ -278,7 +271,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun showDayMenu(date: LocalDate, anchor: View) {
-        val popup = PopupMenu(requireContext(), anchor)
+        val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "+ Add Event")
         popup.setOnMenuItemClickListener { item ->
             if (item.itemId == 1) {
@@ -487,8 +480,42 @@ class ReminderListFragment : Fragment(), Refreshable {
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
         todayText.text = if (isOffline) "$base   •   Offline" else base
-        addEventText.visibility = if (isOffline) View.GONE else View.VISIBLE
+        overflowButton.isEnabled = !isOffline
+        overflowButton.alpha = if (isOffline) 0.35f else 1.0f
         reminderAdapter.setReadOnly(isOffline)
+    }
+
+    private fun showOverflowMenu() {
+        val popup = androidx.appcompat.widget.PopupMenu(requireContext(), overflowButton)
+        popup.menuInflater.inflate(R.menu.reminder_overflow_menu, popup.menu)
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_add_event -> {
+                    val fragment = ReminderFragment.newInstance()
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
+
+                R.id.menu_logout -> {
+                    AuthStore.clear(requireContext())
+                    // Clear back stack and go to Login
+                    parentFragmentManager.popBackStack(
+                        null,
+                        androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+                    )
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, LoginFragment())
+                        .commit()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
     }
 
     private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {

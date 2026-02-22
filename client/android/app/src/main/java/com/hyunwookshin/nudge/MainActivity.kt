@@ -2,6 +2,7 @@ package com.hyunwookshin.nudge
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
@@ -9,15 +10,29 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainActivity : AppCompatActivity(), ReminderCallback {
+class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState != null) return
+
+        val token = AuthStore.getToken(this)
+
+        if (!token.isNullOrBlank()) {
+            // User already logged in
             loadFragment(ReminderListFragment())
+        } else {
+            // No token -> show login page
+            loadFragment(LoginFragment())
         }
+    }
+
+    override fun onLoginSuccess() {
+        // clear backstack and go to reminders
+        supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        loadFragment(ReminderListFragment())
     }
 
     private fun loadFragment(fragment: Fragment) {
