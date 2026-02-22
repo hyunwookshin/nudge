@@ -67,6 +67,7 @@ pip3 install flask
 pip3 install waitress
 pip3 install autocorrect
 pip3 install openai
+pip3 install bcrypt
 ```
 
 ### Set up the config
@@ -115,6 +116,10 @@ This requires the following nginx settings:
          proxy_set_header X-Real-IP $remote_addr;
      }
      location /reminders {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+     location /login {
          proxy_pass http://127.0.0.1:5000;
          proxy_set_header X-Real-IP $remote_addr;
      }

@@ -1,5 +1,6 @@
 users:
   test_user:
+    password_bcrypt: "<encrypted>"
     tokens:
       - token_sha256: "<token-sha>"
         created: "2026-02-22T00:00:00Z"

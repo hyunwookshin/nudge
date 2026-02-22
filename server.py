@@ -29,15 +29,43 @@ def recent(reminder):
     current_utc_time = getCurrentUTCTime()
     return (reminder.time - current_utc_time).total_seconds() >= 0
 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json or {}
+    username = (data.get("Username") or "").strip()
+    password = data.get("Password") or ""
+
+    if not username or not password:
+        return jsonify({"message": "Missing Username/Password"}), 400
+
+    db = auth.load_auth_db()
+    user = db["users"].get(username)
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    stored_bcrypt = user.get("password_bcrypt", "")
+    if not stored_bcrypt:
+        return jsonify({"message": "User not configured"}), 500
+
+    if not auth.verify_password(stored_bcrypt, password):
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    raw_token = auth.issue_token()
+    auth.store_token_for_user(db, username, raw_token)
+    auth.save_auth_db(db)
+
+    return jsonify({"token": raw_token, "username": username}), 200
+
 @app.route('/reminders', methods=['GET'])
 def get_reminders():
+    user, err = auth.require_user()
+    if err: return err
+
     configPath = os.getenv("NUDGE_CONFIG_PATH", "")
     include = request.args.get("include", "none")
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
-    user, err = auth.require_user(cfg)
-    if err: return err
 
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
@@ -66,6 +94,9 @@ def replaceWords(speller, string, preservedWords):
 
 @app.route('/delete_reminder', methods=['POST'])
 def delete_reminder():
+    user, err = auth.require_user()
+    if err: return err
+
     data = request.json
     reminderId = data.get("Id", "")
 
@@ -73,8 +104,6 @@ def delete_reminder():
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
-    user, err = auth.require_user(cfg)
-    if err: return err
 
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
@@ -91,15 +120,15 @@ def delete_reminder():
 
 @app.route('/add_reminder', methods=['POST'])
 def add_reminder():
+    user, err = auth.require_user()
+    if err: return err
+
     data = request.json
 
     configPath = os.getenv("NUDGE_CONFIG_PATH", "")
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
-
-    user, err = auth.require_user(cfg)
-    if err: return err
 
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
@@ -149,6 +178,9 @@ def add_reminder():
 
 @app.route('/add_reminder_ai', methods=['POST'])
 def add_reminder_ai():
+    user, err = auth.require_user(cfg)
+    if err: return err
+
     data = request.json or {}
     free_text = data.get("Text", "").strip()
     secureKey = data.get("Key", "")
@@ -164,8 +196,6 @@ def add_reminder_ai():
     with open(configPath, "r") as f:
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
-    user, err = auth.require_user(cfg)
-    if err: return err
 
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
