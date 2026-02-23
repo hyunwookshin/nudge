@@ -28,6 +28,11 @@ class SignupFragment : Fragment() {
         val confirmEt = view.findViewById<TextInputEditText>(R.id.signupPasswordConfirmEditText)
         val signupButton = view.findViewById<MaterialButton>(R.id.createAccountButton)
         val statusText = view.findViewById<TextView>(R.id.signupStatusText)
+        val backToLoginButton = view.findViewById<TextView>(R.id.backToLoginButton)
+
+        backToLoginButton.setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         signupButton.setOnClickListener {
 
