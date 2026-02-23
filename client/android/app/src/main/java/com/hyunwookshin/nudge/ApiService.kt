@@ -9,9 +9,18 @@ import retrofit2.http.Query
 data class LoginRequest(val Username: String, val Password: String)
 data class LoginResponse(val token: String, val username: String)
 
+data class SignupRequest(
+    val Username: String,
+    val Password: String,
+    val PasswordConfirm: String
+)
+
 interface ApiService {
     @POST("/login")
     fun login(@Body req: LoginRequest): Call<LoginResponse>
+
+    @POST("/signup")
+    fun signup(@Body req: SignupRequest): Call<LoginResponse>
 
     @POST("/add_reminder")
     fun addReminder(@Body reminder: Reminder): Call<Void>

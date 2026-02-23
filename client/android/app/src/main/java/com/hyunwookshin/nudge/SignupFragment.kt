@@ -4,8 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 class SignupFragment : Fragment() {
@@ -18,29 +23,62 @@ class SignupFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val userEt = view.findViewById<TextInputEditText>(R.id.signupUsernameEditText)
-        val passEt = view.findViewById<TextInputEditText>(R.id.signupPasswordEditText)
+        val usernameEt = view.findViewById<TextInputEditText>(R.id.signupUsernameEditText)
+        val passwordEt = view.findViewById<TextInputEditText>(R.id.signupPasswordEditText)
         val confirmEt = view.findViewById<TextInputEditText>(R.id.signupPasswordConfirmEditText)
+        val signupButton = view.findViewById<MaterialButton>(R.id.createAccountButton)
+        val statusText = view.findViewById<TextView>(R.id.signupStatusText)
 
-        view.findViewById<View>(R.id.backToLoginButton).setOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
+        signupButton.setOnClickListener {
 
-        view.findViewById<View>(R.id.createAccountButton).setOnClickListener {
-            val u = userEt.text?.toString()?.trim().orEmpty()
-            val p = passEt.text?.toString().orEmpty()
-            val c = confirmEt.text?.toString().orEmpty()
+            val user = usernameEt.text?.toString()?.trim() ?: ""
+            val pass = passwordEt.text?.toString()?.trim() ?: ""
+            val pass2 = confirmEt.text?.toString()?.trim() ?: ""
 
-            if (u.isBlank() || p.isBlank() || c.isBlank()) {
-                Snackbar.make(view, "All fields are required", Snackbar.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (p != c) {
-                Snackbar.make(view, "Passwords do not match", Snackbar.LENGTH_SHORT).show()
+            if (user.isEmpty() || pass.isEmpty() || pass2.isEmpty()) {
+                statusText.text = "Please fill all fields"
+                statusText.visibility = View.VISIBLE
                 return@setOnClickListener
             }
 
-            Snackbar.make(view, "Signup TODO: wire API", Snackbar.LENGTH_SHORT).show()
+            val api = ApiClient.getClient().create(ApiService::class.java)
+
+            api.signup(SignupRequest(user, pass, pass2))
+                .enqueue(object: Callback<LoginResponse> {
+
+                    override fun onResponse(
+                        call: Call<LoginResponse>,
+                        resp: Response<LoginResponse>
+                    ) {
+                        if (!isAdded) return
+
+                        if (resp.isSuccessful) {
+                            val body = resp.body() ?: return
+
+                            // Save token + username
+                            AuthStore.saveToken(
+                                requireContext(),
+                                body.token,
+                                body.username
+                            )
+
+                            // Go directly to Reminder page
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, ReminderListFragment())
+                                .commit()
+
+                        } else {
+                            statusText.text = "Signup failed (${resp.code()})"
+                            statusText.visibility = View.VISIBLE
+                        }
+                    }
+
+                    override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                        if (!isAdded) return
+                        statusText.text = "Network error"
+                        statusText.visibility = View.VISIBLE
+                    }
+                })
         }
     }
 }
