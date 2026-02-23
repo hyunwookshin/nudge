@@ -6,7 +6,7 @@ Simple reminder/notification app for everyday use.
 
 ### Demo
 
-[![Nudge demo](docs/demo.png)](https://drive.google.com/file/d/1Wt_960vX6kw2LZkRfnV3sYPBKr9gVay-/view?usp=sharing)
+[Nudge demo](https://drive.google.com/file/d/1MriJD1txgrx8c9ic1VJ_9V-6WMYIgBpK/view?usp=sharing)
 
 ### Work flow
 
