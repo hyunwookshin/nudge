@@ -6,14 +6,15 @@ Simple reminder/notification app for everyday use.
 
 ### Demo
 
-[Nudge demo](https://drive.google.com/file/d/1MriJD1txgrx8c9ic1VJ_9V-6WMYIgBpK/view?usp=sharing)
+[Nudge demo](https://drive.google.com/file/d/1Q0yAYbsvRiYzHFu6HCciYB8XSZQWyEpv/view?usp=sharing)
 
 ### Work flow
 
 - Create a reminder manually or using AI prompt
 - Set priority and time to be reminded
 - Check future reminders, update them
-- Get reminders via email/SMS depending on the priorities
+- Get reminders via in-app notifications
+- Advanced: you can configure to send email/SMS, but requires manual backend setup.
 
 ### Screenshots
 
@@ -21,40 +22,12 @@ Simple reminder/notification app for everyday use.
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_login.png?raw=true" alt="Screenshot of the login page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminder_screenshot.png?raw=true" alt="Screenshot of the reminder page" width="250"/>
 <img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_dark_screenshot.png?raw=true" alt="Screenshot of the reminders page" width="250"/>
-<img src="https://github.com/hyunwookshin/nudge/blob/main/images/reminders_web_screenshot.png?raw=true" alt="Screenshot of the reminders page on web browser" width="250"/>
 
 ## Adding new reminders
 
-### Via App
-
 Build and install the android app, and create reminder directly from the app.
 
-### Via CLI
-
-```
-export NUDGE_CONFIG_PATH=./config.yaml
-export NUDGE_STORE_PATH=store
-./remind [-d]
-```
-
-### Via Curl
-
-As shown in the `client/remind.sh` run this curl command:
-```
-curl -k -X POST https://<url>/add_reminder \
-   -H Content-Type:application/json \
-   -d '{
-      "Title": "Meeting with team",
-      "Description": "Discuss project status",
-      "Date": "2024-01-01",
-      "Time": "17:00:00",
-      "Link": "http://google.com",
-      "Priority": 2
-   }'
-
-curl -k -X GET https://<url>/reminders \
-   -H Content-Type:application/json
-```
+# Deployment Guide
 
 ## Set up
 
@@ -145,7 +118,9 @@ OPENAI_API_KEY=. NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=
 
 The `NUDGE_SERVER_SECURE_PATH` should be where the secure key is stored.
 
-## Sending reminders
+## Sending reminders from Server-side
+
+The server-side reminders are optional, as app notifications should be sufficient.
 
 To run eligible reminders,
 ```
