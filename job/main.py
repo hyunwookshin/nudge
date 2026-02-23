@@ -22,7 +22,7 @@ def main(args):
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
-    datasource = yamldatasource.YamlDataSource(cfg)
+    datasource = yamldatasource.YamlDataSource(cfg, "test_user")
     priorities = getPriorities(cfg, args.dryrun)
     actions = Actions(priorities)
 
