@@ -74,11 +74,12 @@ def verify_password(username: str, password: str) -> bool:
     expected = pw.get("pw_hash") or ""
     return _hash_password(password, salt) == expected
 
-def get_pw_hash(username: str) -> bool:
+def get_pw_hash(username: str) -> str:
     doc = _load_auth()
     user = _get_user(doc, username)
     if not user:
-        return False
+        print("Not user")
+        return ""
     pw = user.get("password") or {}
     return pw.get("pw_hash") or ""
 
