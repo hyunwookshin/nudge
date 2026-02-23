@@ -36,6 +36,9 @@ def login():
     username = (data.get("Username") or "").strip()
     password = (data.get("Password") or "").strip()
 
+    # change "@" to "_AT_"
+    username = username.replace("@", "_AT_")
+
     if not username or not password:
         return jsonify({"message": "Missing Username/Password"}), 400
 
@@ -261,6 +264,9 @@ def signup():
     username = (data.get("Username") or "").strip()
     password = (data.get("Password") or "").strip()
     password2 = (data.get("PasswordConfirm") or "").strip()
+
+    # change "@" to "_AT_"
+    username = username.replace("@", "_AT_")
 
     if not username or not password:
         return jsonify({"message": "Missing Username/Password"}), 400
