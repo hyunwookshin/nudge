@@ -74,6 +74,14 @@ def verify_password(username: str, password: str) -> bool:
     expected = pw.get("pw_hash") or ""
     return _hash_password(password, salt) == expected
 
+def get_pw_hash(username: str) -> bool:
+    doc = _load_auth()
+    user = _get_user(doc, username)
+    if not user:
+        return False
+    pw = user.get("password") or {}
+    return pw.get("pw_hash") or ""
+
 def issue_token(username: str):
     # return: (raw_token, token_sha256)
     raw = secrets.token_urlsafe(32)  # long random token

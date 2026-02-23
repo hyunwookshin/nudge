@@ -65,7 +65,9 @@ def get_reminders():
     cfg = config.Config(info)
 
     user = g.username
-    datasource = yamldatasource.YamlDataSource(cfg, user)
+    pw_hash = auth.get_pw_hash(user)
+
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
     reminders = datasource.loadReminders()
     for r in reminders:
         if cfg.getTimeZone():
@@ -103,7 +105,9 @@ def delete_reminder():
     cfg = config.Config(info)
 
     user = g.username
-    datasource = yamldatasource.YamlDataSource(cfg, user)
+    pw_hash = auth.get_pw_hash(user)
+
+    datasource = yamldatasource.YamlDataSource(cfg, user, True,  pw_hash)
     reminders = datasource.loadReminders()
     filtered = []
     for r in reminders:
@@ -128,7 +132,9 @@ def add_reminder():
     cfg = config.Config(info)
 
     user = g.username
-    datasource = yamldatasource.YamlDataSource(cfg, user)
+    pw_hash = auth.get_pw_hash(user)
+
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -195,7 +201,9 @@ def add_reminder_ai():
     cfg = config.Config(info)
 
     user = g.username
-    datasource = yamldatasource.YamlDataSource(cfg, user)
+    pw_hash = auth.get_pw_hash(user)
+
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
