@@ -114,7 +114,13 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             val d = daysUntil(reminder.Time)
             if (d != null && d in 0..13) {
                 countdown.visibility = View.VISIBLE
-                countdown.text = if (d == 0L) "Today" else "In $d days"
+                if (d == 0L) {
+                    countdown.text = "Today"
+                } else if (d == 1L) {
+                    countdown.text = "Tomorrow"
+                } else {
+                    countdown.text = "In $d days"
+                }
             } else {
                 countdown.visibility = View.GONE
                 countdown.text = ""
