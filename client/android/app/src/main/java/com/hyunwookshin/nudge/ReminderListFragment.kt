@@ -512,6 +512,17 @@ class ReminderListFragment : Fragment(), Refreshable {
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, LoginFragment())
                         .commit()
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val db = AppDb.get(requireContext())
+                        val reminders = db.reminderDao().getAll().map { it.toDomain() }
+
+                        reminders.forEach {
+                            ReminderScheduler.cancelReminder(requireContext(), it.Id)
+                            FiredStore.clear(requireContext(), it.Id)
+                        }
+
+                        db.reminderDao().clearAll()
+                    }
                     true
                 }
                 else -> false
