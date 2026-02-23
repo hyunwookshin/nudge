@@ -6,6 +6,13 @@ from flask import request, jsonify, g
 
 DEFAULT_USERS_PATH = os.getenv("DEFAULT_USERS_PATH", "store/auth.yaml")
 
+def get_secure_key():
+    securePath = os.getenv("NUDGE_SECURE_KEY_PATH", "")
+    with open(securePath, "r") as f:
+        key = f.read().strip()
+        assert key != "", "Empty Key"
+    return key
+
 def _now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -42,7 +49,7 @@ def create_user(username: str, password: str):
     if _get_user(doc, username) is not None:
         return None, "User already exists"
 
-    salt = base64.b64encode(secrets.token_bytes(16)).decode("utf-8")
+    salt = get_secure_key() + username
     pw_hash = _hash_password(password, salt)
 
     user_obj = {
