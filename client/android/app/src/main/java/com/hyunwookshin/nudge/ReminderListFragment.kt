@@ -527,10 +527,14 @@ class ReminderListFragment : Fragment(), Refreshable {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val db = AppDb.get(requireContext())
                         val reminders = db.reminderDao().getAll().map { it.toDomain() }
-
-                        reminders.forEach {
-                            ReminderScheduler.cancelReminder(requireContext(), it.Id)
-                            FiredStore.clear(requireContext(), it.Id)
+                        withContext(Dispatchers.Main) {
+                            if (!isAdded) return@withContext
+                            reminders.forEach {
+                                if (getContext() != null) {
+                                    ReminderScheduler.cancelReminder(requireContext(), it.Id)
+                                    FiredStore.clear(requireContext(), it.Id)
+                                }
+                            }
                         }
 
                         db.reminderDao().clearAll()
