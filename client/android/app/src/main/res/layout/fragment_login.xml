@@ -170,6 +170,15 @@
                 app:rippleColor="#220B6B6B"/>
 
             <TextView
+                android:id="@+id/tosLoginText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="By logging in you agree to the Terms of Service"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:paddingTop="8dp" />
+
+            <TextView
                 android:id="@+id/loginStatusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

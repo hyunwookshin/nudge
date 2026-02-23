@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.TextView
 import retrofit2.Call
 import retrofit2.Callback
@@ -85,5 +86,33 @@ class SignupFragment : Fragment() {
                     }
                 })
         }
+        val tosCheckbox: CheckBox = view.findViewById(R.id.tosCheckbox)
+
+        val fullText = "I agree to the Terms of Service"
+        val clickable = android.text.SpannableString(fullText)
+
+        val start = fullText.indexOf("Terms")
+        val end = start + "Terms of Service".length
+
+        clickable.setSpan(object : android.text.style.ClickableSpan() {
+            override fun onClick(widget: View) {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, TermsOfServiceFragment())
+                    .addToBackStack(null)
+                    .commit()
+            }
+        }, start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        clickable.setSpan(
+            android.text.style.ForegroundColorSpan(
+                android.graphics.Color.parseColor("#1565C0")
+            ),
+            start,
+            end,
+            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        tosCheckbox.text = clickable
+        tosCheckbox.movementMethod = android.text.method.LinkMovementMethod.getInstance()
     }
 }

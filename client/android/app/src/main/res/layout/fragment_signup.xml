@@ -103,7 +103,6 @@
                     android:id="@+id/signupUsernameEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="you@example.com"
                     android:textColor="#111827"
                     android:textColorHint="#9CA3AF"
                     android:inputType="textEmailAddress"
@@ -142,9 +141,7 @@
                     android:id="@+id/signupPasswordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Enter password"
                     android:textColor="#111827"
-                    android:textColorHint="#9CA3AF"
                     android:inputType="textPassword"
                     android:singleLine="true"
                     android:padding="12dp"
@@ -189,6 +186,14 @@
                     android:padding="12dp"
                     android:imeOptions="actionDone"/>
             </com.google.android.material.textfield.TextInputLayout>
+
+            <CheckBox
+                android:id="@+id/tosCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#888888"
+                android:text="I agree to the Terms of Service"
+                android:textSize="13sp" />
 
             <!-- Create -->
             <com.google.android.material.button.MaterialButton

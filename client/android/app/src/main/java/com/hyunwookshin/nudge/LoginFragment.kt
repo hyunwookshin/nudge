@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import retrofit2.Call
@@ -33,6 +34,34 @@ class LoginFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+        val tosText: TextView = view.findViewById(R.id.tosLoginText)
+
+        val fullText = "By logging in you agree to the Terms of Service"
+        val clickable = android.text.SpannableString(fullText)
+
+        val start = fullText.indexOf("Terms")
+        val end = start + "Terms of Service".length
+
+        clickable.setSpan(object : android.text.style.ClickableSpan() {
+            override fun onClick(widget: View) {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, TermsOfServiceFragment())
+                    .addToBackStack(null)
+                    .commit()
+            }
+        }, start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        clickable.setSpan(
+            android.text.style.ForegroundColorSpan(
+                android.graphics.Color.parseColor("#1565C0")
+            ),
+            start,
+            end,
+            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        tosText.text = clickable
+        tosText.movementMethod = android.text.method.LinkMovementMethod.getInstance()
     }
 
 
