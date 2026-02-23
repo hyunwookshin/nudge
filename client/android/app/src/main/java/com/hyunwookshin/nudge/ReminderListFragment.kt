@@ -48,6 +48,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var miniCalPrev: ImageButton
     private lateinit var miniCalNext: ImageButton
     private lateinit var miniCalendarRv: RecyclerView
+    private var calendarVisible = true
+    private lateinit var calendarContainer: View
 
     // Pills
     private enum class Period { CURRENT, ALL_TIME }
@@ -134,6 +136,9 @@ class ReminderListFragment : Fragment(), Refreshable {
 
         miniCalPrev.setOnClickListener { jumpMonthMiniCalendar(-1) }
         miniCalNext.setOnClickListener { jumpMonthMiniCalendar(+1) }
+
+        calendarContainer = view.findViewById(R.id.miniCalendarContainer)
+        calendarContainer.visibility = if (calendarVisible) View.VISIBLE else View.GONE
 
         setupMiniCalendar(view)
         attachMonthSwipe(view)
@@ -499,6 +504,13 @@ class ReminderListFragment : Fragment(), Refreshable {
                         .replace(R.id.fragment_container, fragment)
                         .addToBackStack(null)
                         .commit()
+                    true
+                }
+
+
+                R.id.menu_toggle_mini_calendar -> {
+                    calendarVisible = !calendarVisible
+                    calendarContainer.visibility = if (calendarVisible) View.VISIBLE else View.GONE
                     true
                 }
 
