@@ -16,6 +16,8 @@ import com.google.android.material.textfield.TextInputEditText
 
 class SignupFragment : Fragment() {
 
+    private lateinit var tosCheckbox: CheckBox
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -30,6 +32,7 @@ class SignupFragment : Fragment() {
         val signupButton = view.findViewById<MaterialButton>(R.id.createAccountButton)
         val statusText = view.findViewById<TextView>(R.id.signupStatusText)
         val backToLoginButton = view.findViewById<TextView>(R.id.backToLoginButton)
+        tosCheckbox = view.findViewById(R.id.tosCheckbox)
 
         backToLoginButton.setOnClickListener {
             parentFragmentManager.popBackStack()
@@ -43,6 +46,11 @@ class SignupFragment : Fragment() {
 
             if (user.isEmpty() || pass.isEmpty() || pass2.isEmpty()) {
                 statusText.text = "Please fill all fields"
+                statusText.visibility = View.VISIBLE
+                return@setOnClickListener
+            }
+            if (!tosCheckbox.isChecked) {
+                statusText.text =  "Missing Terms of Service"
                 statusText.visibility = View.VISIBLE
                 return@setOnClickListener
             }
@@ -86,7 +94,6 @@ class SignupFragment : Fragment() {
                     }
                 })
         }
-        val tosCheckbox: CheckBox = view.findViewById(R.id.tosCheckbox)
 
         val fullText = "I agree to the Terms of Service"
         val clickable = android.text.SpannableString(fullText)
