@@ -219,6 +219,8 @@ class ReminderListFragment : Fragment(), Refreshable {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                         db.reminderDao().replaceAll(reminders.map { it.toEntity() })
                     }
+                    // Schedule reminders
+                    ReminderScheduler.scheduleAll(requireContext(), reminders)
 
                 } else {
                     showOffline(true)

@@ -137,6 +137,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter key"
+        android:visibility="gone"
         android:inputType="textPassword"
         android:singleLine="true"
         android:layout_margin="8dp"
@@ -154,6 +155,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
+        android:visibility="gone"
         android:entries="@array/snooze_array" />
 
     <LinearLayout

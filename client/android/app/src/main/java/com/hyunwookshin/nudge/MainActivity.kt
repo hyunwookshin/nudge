@@ -1,16 +1,21 @@
 package com.hyunwookshin.nudge
 
+import androidx.lifecycle.lifecycleScope
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginCallback {
+
+    private lateinit var db: AppDb
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +65,16 @@ class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginC
     }
 
     override fun onReminderUpdated() {
+        db = AppDb.get(this@MainActivity)
+        lifecycleScope.launch {
+            val reminders = db.reminderDao().getAll().map { it.toDomain() }
+
+            for (r in reminders) {
+                ReminderScheduler.cancelReminder(this@MainActivity, r.Id)
+                FiredStore.clear(this@MainActivity, r.Id)
+                ReminderScheduler.scheduleReminder(this@MainActivity, r)
+            }
+        }
         supportFragmentManager
             .popBackStack()
     }
@@ -87,6 +102,7 @@ class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginC
         call.enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
+                    ReminderScheduler.cancelReminder(this@MainActivity, reminder.Id)
                     refreshFragment()
                 } else {
                     Log.i("main", "Failed to remove reminder: ${response.raw()}")

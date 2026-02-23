@@ -25,6 +25,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class ReminderFragment : Fragment() {
 
@@ -271,6 +272,11 @@ class ReminderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val goBackButton: Button = view.findViewById(R.id.goBackButton)
         goBackButton.setOnClickListener { callback?.onAbortEditReminder() }
+
+        if (!NotificationUtils.areNotificationsEnabled(requireContext())) {
+            showNotificationDisabledDialog()
+            return
+        }
     }
 
     private fun showDatePicker() {
@@ -346,7 +352,7 @@ class ReminderFragment : Fragment() {
         val read = selectedTime.toString()
         val key = passwordEditText.text.toString()
         val id = idEditText.text.toString()
-        val snooze = snoozeSpinner.selectedItemPosition
+        val snooze = 1 // snoozeSpinner.selectedItemPosition
 
         if (title.isEmpty() || description.isEmpty() || selectedDate == null || selectedTime == null ) {
             Snackbar.make(requireView(), "All fields are required", Snackbar.LENGTH_SHORT).show()
@@ -534,6 +540,20 @@ class ReminderFragment : Fragment() {
 
         titleEditText.setAdapter(titleAdapter)
         descriptionEditText.setAdapter(descriptionAdapter)
+    }
+
+    private fun showNotificationDisabledDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Enable Notifications")
+            .setMessage("Notifications are disabled. Please enable them so reminders can alert you.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Open Settings") { _, _ ->
+                val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+                }
+                startActivity(intent)
+            }
+            .show()
     }
 
     override fun onDestroyView() {

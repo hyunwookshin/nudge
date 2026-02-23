@@ -18,6 +18,9 @@ interface ReminderDao {
     @Query("DELETE FROM reminders")
     suspend fun clearAll()
 
+    @Query("SELECT * FROM reminders WHERE id = :id LIMIT 1")
+    fun getById(id: String): ReminderEntity?
+
     @Transaction
     suspend fun replaceAll(items: List<ReminderEntity>) {
         clearAll()
