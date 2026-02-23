@@ -5,7 +5,9 @@ import pytz
 from urllib.parse import quote_plus
 
 def maps_link_from_location(location: str) -> str:
-        return f"https://www.google.com/maps/search/?api=1&query={quote_plus(location)}"
+    if not location:
+        return ""
+    return f"https://www.google.com/maps/search/?api=1&query={quote_plus(location)}"
 
 def getCurrentUTCTime():
     return datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -43,9 +45,9 @@ def parse_reminder_from_text_openai(free_text: str, cfg) -> dict:
                 "Date": {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}$"},
                 "Time": {"type": "string", "pattern": r"^\d{2}:\d{2}:\d{2}$"},
                 "Link": {"type": "string"},
-                "Address": {"type": "string"}
+                "Location": {"type": "string"}
             },
-            "required": ["Title", "Description", "Date", "Time", "Link", "Address"]
+            "required": ["Title", "Description", "Date", "Time", "Link", "Location"]
         }
     }
 
@@ -62,7 +64,9 @@ Rules:
 - If the user doesn't provide a link, set Link to "".
 - Infer a concise Title and a helpful Description.
 - If the text is ambiguous, make the best reasonable assumption (do not ask questions).
-- Address is optional, and likely not provided
+- Location is optional, and likely not provided
+- Last but not least if the event is inappropriate, make Title/Description empty, and
+  set Date to 2026-01-01 and Time to 00:00:00.
 """
 
     # Responses API w/ Structured Outputs (JSON schema) :contentReference[oaicite:3]{index=3}
@@ -92,8 +96,8 @@ Rules:
 
     data = json.loads(out_text)
 
-    if "Address" in data and data["Address"] is not None:
-        data["Link"] = maps_link_from_location(data["Address"])
+    if "Location" in data and data["Location"] is not None:
+        data["Link"] = maps_link_from_location(data["Location"])
 
     # Guarantee Link exists
     if "Link" not in data or data["Link"] is None:
