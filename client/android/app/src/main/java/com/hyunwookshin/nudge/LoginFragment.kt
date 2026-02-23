@@ -25,6 +25,17 @@ class LoginFragment : Fragment() {
         callback = activity as? LoginCallback
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val signupBtn = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.signupButton)
+        signupBtn.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, SignupFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
