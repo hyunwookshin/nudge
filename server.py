@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from datetime import datetime, timedelta, timezone
 import pytz
 import yaml
@@ -32,34 +32,31 @@ def recent(reminder):
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json or {}
+
     username = (data.get("Username") or "").strip()
-    password = data.get("Password") or ""
+    password = (data.get("Password") or "").strip()
 
     if not username or not password:
         return jsonify({"message": "Missing Username/Password"}), 400
 
-    db = auth.load_auth_db()
-    user = db["users"].get(username)
-    if not user:
+    # Verify user/password against store/auth.yaml
+    if not auth.verify_password(username, password):
         return jsonify({"message": "Invalid credentials"}), 401
 
-    stored_bcrypt = user.get("password_bcrypt", "")
-    if not stored_bcrypt:
-        return jsonify({"message": "User not configured"}), 500
+    # Mint a NEW long random token and store its sha256 in auth.yaml
+    raw_token, token_sha = auth.issue_token(username)
+    if not raw_token:
+        return jsonify({"message": "User not found"}), 404
 
-    if not auth.verify_password(stored_bcrypt, password):
-        return jsonify({"message": "Invalid credentials"}), 401
-
-    raw_token = auth.issue_token()
-    auth.store_token_for_user(db, username, raw_token)
-    auth.save_auth_db(db)
-
-    return jsonify({"token": raw_token, "username": username}), 200
+    # App should store `raw_token` and send it as X-Nudge-Token on every request
+    return jsonify({
+        "username": username,
+        "token": raw_token,
+    }), 200
 
 @app.route('/reminders', methods=['GET'])
+@auth.require_user
 def get_reminders():
-    user, err = auth.require_user()
-    if err: return err
 
     configPath = os.getenv("NUDGE_CONFIG_PATH", "")
     include = request.args.get("include", "none")
@@ -67,6 +64,7 @@ def get_reminders():
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
+    user = g.username
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     for r in reminders:
@@ -93,9 +91,8 @@ def replaceWords(speller, string, preservedWords):
     return " ".join(tokens)
 
 @app.route('/delete_reminder', methods=['POST'])
+@auth.require_user
 def delete_reminder():
-    user, err = auth.require_user()
-    if err: return err
 
     data = request.json
     reminderId = data.get("Id", "")
@@ -105,6 +102,7 @@ def delete_reminder():
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
+    user = g.username
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     filtered = []
@@ -119,9 +117,8 @@ def delete_reminder():
     return jsonify({"message": "No reminder found"}), 500
 
 @app.route('/add_reminder', methods=['POST'])
+@auth.require_user
 def add_reminder():
-    user, err = auth.require_user()
-    if err: return err
 
     data = request.json
 
@@ -130,6 +127,7 @@ def add_reminder():
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
+    user = g.username
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
@@ -177,9 +175,8 @@ def add_reminder():
     return jsonify({"message": "Reminder added successfully!"}), 200
 
 @app.route('/add_reminder_ai', methods=['POST'])
+@auth.require_user
 def add_reminder_ai():
-    user, err = auth.require_user(cfg)
-    if err: return err
 
     data = request.json or {}
     free_text = data.get("Text", "").strip()
@@ -197,6 +194,7 @@ def add_reminder_ai():
         info = yaml.safe_load(f.read().strip())
     cfg = config.Config(info)
 
+    user = g.username
     datasource = yamldatasource.YamlDataSource(cfg, user)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
@@ -248,6 +246,25 @@ def add_reminder_ai():
     datasource.storeReminders(reminders)
 
     return jsonify({"message": "Reminder added successfully!"}), 200
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.json or {}
+    username = (data.get("Username") or "").strip()
+    password = (data.get("Password") or "").strip()
+    password2 = (data.get("PasswordConfirm") or "").strip()
+
+    if not username or not password:
+        return jsonify({"message": "Missing Username/Password"}), 400
+    if password != password2:
+        return jsonify({"message": "Password mismatch"}), 400
+
+    user_obj, err = auth.create_user(username, password)
+    if err:
+        return jsonify({"message": err}), 409
+
+    token, _ = auth.issue_token(username)
+    return jsonify({"username": username, "token": token}), 200
 
 if __name__ == "__main__":
     # app.run(debug=True)

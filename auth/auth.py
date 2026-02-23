@@ -1,66 +1,118 @@
 # auth/auth.py
-import os
-import yaml
-import hashlib
-import secrets
+import os, yaml, base64, hashlib, secrets
 from datetime import datetime, timezone
-import bcrypt
-from flask import request, jsonify
+from functools import wraps
+from flask import request, jsonify, g
 
-AUTH_PATH = os.getenv("DEFAULT_USERS_PATH", "store/auth.yaml")
+DEFAULT_USERS_PATH = os.getenv("DEFAULT_USERS_PATH", "store/auth.yaml")
 
-def _now_iso() -> str:
+def _now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def _sha256_hex(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-def load_auth_db():
-    if not os.path.exists(AUTH_PATH):
+def _load_auth():
+    if not os.path.exists(DEFAULT_USERS_PATH):
         return {"users": {}}
-    with open(AUTH_PATH, "r") as f:
-        data = yaml.safe_load(f.read()) or {}
-    data.setdefault("users", {})
-    return data
+    with open(DEFAULT_USERS_PATH, "r") as f:
+        raw = f.read().strip()
+        if not raw:
+            return {"users": {}}
+        return yaml.safe_load(raw) or {"users": {}}
 
-def save_auth_db(db):
-    os.makedirs(os.path.dirname(AUTH_PATH), exist_ok=True)
-    with open(AUTH_PATH, "w") as f:
-        yaml.safe_dump(db, f, default_flow_style=False, indent=2)
+def _save_auth(doc):
+    os.makedirs(os.path.dirname(DEFAULT_USERS_PATH), exist_ok=True)
+    with open(DEFAULT_USERS_PATH, "w") as f:
+        f.write(yaml.safe_dump(doc, default_flow_style=False, indent=4).strip())
 
-def verify_password(stored_bcrypt: str, password: str) -> bool:
-    try:
-        return bcrypt.checkpw(password.encode("utf-8"), stored_bcrypt.encode("utf-8"))
-    except Exception:
+def _get_user(doc, username: str):
+    return (doc.get("users") or {}).get(username)
+
+def _set_user(doc, username: str, user_obj):
+    doc.setdefault("users", {})
+    doc["users"][username] = user_obj
+
+def _hash_password(password: str, salt_b64: str) -> str:
+    # simple: sha256(salt + ":" + password)
+    return _sha256_hex(f"{salt_b64}:{password}")
+
+def create_user(username: str, password: str):
+    doc = _load_auth()
+    if _get_user(doc, username) is not None:
+        return None, "User already exists"
+
+    salt = base64.b64encode(secrets.token_bytes(16)).decode("utf-8")
+    pw_hash = _hash_password(password, salt)
+
+    user_obj = {
+        "password": {
+            "salt": salt,
+            "pw_hash": pw_hash,
+            "created": _now_iso(),
+        },
+        "tokens": []
+    }
+    _set_user(doc, username, user_obj)
+    _save_auth(doc)
+    return user_obj, None
+
+def verify_password(username: str, password: str) -> bool:
+    doc = _load_auth()
+    user = _get_user(doc, username)
+    if not user:
         return False
+    pw = user.get("password") or {}
+    salt = pw.get("salt") or ""
+    expected = pw.get("pw_hash") or ""
+    return _hash_password(password, salt) == expected
 
-def issue_token() -> str:
-    # 32 bytes random => 64 hex chars
-    return secrets.token_hex(32)
+def issue_token(username: str):
+    # return: (raw_token, token_sha256)
+    raw = secrets.token_urlsafe(32)  # long random token
+    token_sha = _sha256_hex(raw)
 
-def store_token_for_user(db, username: str, raw_token: str):
-    u = db["users"].setdefault(username, {})
-    u.setdefault("tokens", [])
-    u["tokens"].append({
-        "token_sha256": _sha256_hex(raw_token),
+    doc = _load_auth()
+    user = _get_user(doc, username)
+    if not user:
+        return None, None
+
+    user.setdefault("tokens", [])
+    user["tokens"].append({
+        "token_sha256": token_sha,
         "created": _now_iso(),
     })
+    if len(user["tokens"]) >= 5:
+        user["tokens"].pop(0)
 
-def user_from_token(raw_token: str):
-    if not raw_token:
+    _set_user(doc, username, user)
+    _save_auth(doc)
+    return raw, token_sha
+
+def user_from_token_header():
+    token = request.headers.get("X-Nudge-Token", "").strip()
+    if not token:
         return None
-    db = load_auth_db()
-    token_hash = _sha256_hex(raw_token)
-    for username, u in db["users"].items():
+
+    token_sha = _sha256_hex(token)
+    doc = _load_auth()
+    users = doc.get("users") or {}
+
+    for username, u in users.items():
         for t in (u.get("tokens") or []):
-            if t.get("token_sha256") == token_hash:
+            if t.get("token_sha256") == token_sha:
                 return username
     return None
 
-def require_user():
-    token = request.headers.get("X-Nudge-Token", "").strip()
-    username = user_from_token(token)
-    if not username:
-        # return a flask response so callers can just "return err"
-        return None, (jsonify({"message": "Unauthorized"}), 401)
-    return username, None
+def require_user(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        username = user_from_token_header()
+        if not username:
+            return jsonify({"message": "Unauthorized"}), 401
+        g.username = username
+        return fn(*args, **kwargs)
+    return wrapper
+
+def load_auth_db():
+    return _load_auth()

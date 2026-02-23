@@ -125,6 +125,10 @@ This requires the following nginx settings:
          proxy_pass http://127.0.0.1:5000;
          proxy_set_header X-Real-IP $remote_addr;
      }
+     location /signup {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
      # For desktop browser access
      location ^~ /public/nudge/web/ {
          auth_basic "Restricted Content";
