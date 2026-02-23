@@ -55,6 +55,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private enum class Period { CURRENT, ALL_TIME }
     private var period: Period = Period.CURRENT
     private lateinit var periodPill: com.google.android.material.button.MaterialButton
+    private lateinit var calendarTogglePill : com.google.android.material.button.MaterialButton
 
     // DB for caching
     private lateinit var db: AppDb
@@ -79,6 +80,15 @@ class ReminderListFragment : Fragment(), Refreshable {
         periodPill.setOnClickListener { anchor ->
             showPeriodMenu(anchor)
         }
+
+        calendarTogglePill = view.findViewById(R.id.calendarTogglePill)
+        renderCalendarTogglePill()
+        calendarTogglePill.setOnClickListener {
+            calendarVisible = !calendarVisible
+
+            renderCalendarTogglePill()
+            calendarContainer.visibility = if (calendarVisible) View.VISIBLE else View.GONE
+        }
         return view
     }
 
@@ -87,6 +97,13 @@ class ReminderListFragment : Fragment(), Refreshable {
         periodPill.text = when (period) {
             Period.CURRENT -> "Current"
             Period.ALL_TIME -> "All Time"
+        }
+    }
+
+    private fun renderCalendarTogglePill() {
+        calendarTogglePill.text = when (calendarVisible) {
+            true -> "Hide Calendar"
+            false -> "Show Calendar"
         }
     }
 
@@ -112,6 +129,7 @@ class ReminderListFragment : Fragment(), Refreshable {
 
         popup.show()
     }
+
 
     override fun refresh() {
         fetchReminders()
@@ -510,6 +528,7 @@ class ReminderListFragment : Fragment(), Refreshable {
 
                 R.id.menu_toggle_mini_calendar -> {
                     calendarVisible = !calendarVisible
+                    renderCalendarTogglePill()
                     calendarContainer.visibility = if (calendarVisible) View.VISIBLE else View.GONE
                     true
                 }
