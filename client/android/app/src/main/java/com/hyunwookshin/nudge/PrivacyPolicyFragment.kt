@@ -132,18 +132,9 @@ This app is not intended for use by individuals located in the European Union (E
 You may:
 • Access the reminder and account data stored for your account by using the App
 • Delete individual reminders directly within the App
-• Request full account and data deletion by contacting us (see Section 11)
 • Stop using the App at any time
 
-We will respond to verified data deletion requests within a reasonable timeframe.
-
-11. Contact
-
-If you have questions about this Privacy Policy or wish to request data deletion, contact us at:
-
-hyunwookshin.dev@gmail.com
-
-12. Changes to This Policy
+11. Changes to This Policy
 
 We may update this Privacy Policy from time to time. The "Last Updated" date at the top of this page reflects the most recent revision. Continued use of the App after changes constitutes your acceptance of the updated policy.
 
