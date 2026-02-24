@@ -163,7 +163,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Sign up"
+                android:text="First time user?"
                 android:textAllCaps="false"
                 android:textStyle="bold"
                 android:textColor="#0B6B6B"
