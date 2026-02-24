@@ -95,11 +95,11 @@ class SignupFragment : Fragment() {
                 })
         }
 
-        val fullText = "I agree to the Terms of Service"
+        val fullText = "I agree to the Terms of Service and Privacy Policy"
         val clickable = android.text.SpannableString(fullText)
 
-        val start = fullText.indexOf("Terms")
-        val end = start + "Terms of Service".length
+        val tosStart = fullText.indexOf("Terms")
+        val tosEnd = tosStart + "Terms of Service".length
 
         clickable.setSpan(object : android.text.style.ClickableSpan() {
             override fun onClick(widget: View) {
@@ -108,14 +108,35 @@ class SignupFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
-        }, start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }, tosStart, tosEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
         clickable.setSpan(
             android.text.style.ForegroundColorSpan(
                 android.graphics.Color.parseColor("#1565C0")
             ),
-            start,
-            end,
+            tosStart,
+            tosEnd,
+            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        val ppStart = fullText.indexOf("Privacy Policy")
+        val ppEnd = ppStart + "Privacy Policy".length
+
+        clickable.setSpan(object : android.text.style.ClickableSpan() {
+            override fun onClick(widget: View) {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, PrivacyPolicyFragment())
+                    .addToBackStack(null)
+                    .commit()
+            }
+        }, ppStart, ppEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        clickable.setSpan(
+            android.text.style.ForegroundColorSpan(
+                android.graphics.Color.parseColor("#1565C0")
+            ),
+            ppStart,
+            ppEnd,
             android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
 
