@@ -74,12 +74,17 @@ Cron job → job/ runner → email/SMS actions
 - Login / Signup
 - Reminder list, detail, creation
 - Snooze
-- Terms of Service
+- Terms of Service (`TermsOfServiceFragment`)
+- Privacy Policy (`PrivacyPolicyFragment`)
 - Dark mode support
 - Calendar pill show/hide toggle
 - Reminder cards with various fields
 
+### Legal Screens Pattern
+`TermsOfServiceFragment` and `PrivacyPolicyFragment` are built identically: programmatic `ScrollView` + `TextView`, no XML layout. Both are linked from `LoginFragment` (`tosLoginText` TextView) and `SignupFragment` (`tosCheckbox` CheckBox) using `SpannableString` + `ClickableSpan`. Login text: "By logging in you agree to the Terms of Service and Privacy Policy". Signup checkbox: "I agree to the Terms of Service and Privacy Policy". Signup validation requires the checkbox to be checked before account creation proceeds.
+
 ### Recent Work (from git log)
+- Added Privacy Policy screen; linked from Login and Signup
 - Fixed fields in reminder cards
 - Fixed checkbox bug in ToS
 - Updated ToS copy
