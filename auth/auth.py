@@ -56,9 +56,9 @@ def create_user(username: str, password: str):
         "password": {
             "salt": salt,
             "pw_hash": pw_hash,
+            "enc_key": pw_hash,
             "created": _now_iso(),
         },
-        "enc_key": pw_hash,
         "tokens": []
     }
     _set_user(doc, username, user_obj)
