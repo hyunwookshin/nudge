@@ -8,6 +8,9 @@
         android:id="@+id/menu_toggle_mini_calendar"
         android:title="Toggle Calendar" />
     <item
+        android:id="@+id/menu_account"
+        android:title="Account" />
+    <item
         android:id="@+id/menu_logout"
         android:title="Log out" />
 

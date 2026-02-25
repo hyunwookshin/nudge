@@ -544,6 +544,14 @@ class ReminderListFragment : Fragment(), Refreshable {
                 }
 
 
+                R.id.menu_account -> {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, AccountFragment())
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
+
                 R.id.menu_toggle_mini_calendar -> {
                     calendarVisible = !calendarVisible
                     renderCalendarTogglePill()

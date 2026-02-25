@@ -15,6 +15,14 @@ data class SignupRequest(
     val PasswordConfirm: String
 )
 
+data class ChangePasswordRequest(
+    val CurrentPassword: String,
+    val NewPassword: String,
+    val ConfirmPassword: String
+)
+
+data class MessageResponse(val message: String)
+
 interface ApiService {
     @POST("/login")
     fun login(@Body req: LoginRequest): Call<LoginResponse>
@@ -36,4 +44,7 @@ interface ApiService {
 
     @GET("/reminders")
     fun getAllReminders(@Query("include") include: String = "all"): Call<ReminderResponse>
+
+    @POST("/change_password")
+    fun changePassword(@Body req: ChangePasswordRequest): Call<MessageResponse>
 }
