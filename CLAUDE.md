@@ -138,3 +138,37 @@ Key fields: `title`, `description`, `time` (datetime), `priority`, `link`, `clos
 - **Change reminder fields:** update `models/`, propagate to `data/`, Android UI, and API
 - **Change notification behavior:** edit `actions/`
 - **Modify AI parsing:** edit `ai.py` (uses OpenAI structured outputs)
+
+---
+
+## Building and Installing the Android App (macOS + Android Studio)
+
+### Prerequisites
+- Android Studio installed at `/Applications/Android Studio.app`
+- `JAVA_HOME` set to the Android Studio bundled JDK in your shell profile:
+  ```bash
+  export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+  ```
+  This is required because AGP 8.4.1 needs Java 11+, but the system Java may be older.
+- A physical Android device connected via USB with USB debugging enabled, **or** an emulator running
+- `adb` available at `~/Library/Android/sdk/platform-tools/adb` (add to `PATH` if needed)
+
+### Build and Install
+
+From `client/android/`:
+
+```bash
+./gradlew installDebug
+```
+
+### Launch the App After Installing
+
+```bash
+~/Library/Android/sdk/platform-tools/adb shell am start -n "com.hyunwookshin.nudge/.MainActivity"
+```
+
+### One-liner (build, install, and launch)
+
+```bash
+./gradlew installDebug && ~/Library/Android/sdk/platform-tools/adb shell am start -n "com.hyunwookshin.nudge/.MainActivity"
+```
