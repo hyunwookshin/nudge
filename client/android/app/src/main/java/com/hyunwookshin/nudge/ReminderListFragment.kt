@@ -57,6 +57,10 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var periodPill: com.google.android.material.button.MaterialButton
     private lateinit var calendarTogglePill : com.google.android.material.button.MaterialButton
 
+    // Empty state
+    private lateinit var addReminderButton: com.google.android.material.button.MaterialButton
+    private var isOffline = false
+
     // DB for caching
     private lateinit var db: AppDb
 
@@ -148,6 +152,15 @@ class ReminderListFragment : Fragment(), Refreshable {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        addReminderButton = view.findViewById(R.id.addReminderButton)
+        addReminderButton.setOnClickListener {
+            val fragment = ReminderFragment.newInstance()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
         miniCalendarMonth = view.findViewById(R.id.miniCalendarMonth)
         miniCalPrev = view.findViewById(R.id.miniCalPrev)
         miniCalNext = view.findViewById(R.id.miniCalNext)
@@ -226,6 +239,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     showOffline(false)
                     currentReminders = reminders
                     reminderAdapter.setReminders(reminders)
+                    updateEmptyState()
                     miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
                     updateMiniCalendarMonth(miniCalAnchor)
                     // Also scroll to the anchor date
@@ -501,13 +515,20 @@ class ReminderListFragment : Fragment(), Refreshable {
         attach(rv)
     }
 
-    private fun showOffline(isOffline: Boolean) {
+    private fun showOffline(offline: Boolean) {
+        isOffline = offline
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
-        todayText.text = if (isOffline) "$base   •   Offline" else base
-        overflowButton.isEnabled = !isOffline
-        overflowButton.alpha = if (isOffline) 0.35f else 1.0f
-        reminderAdapter.setReadOnly(isOffline)
+        todayText.text = if (offline) "$base   •   Offline" else base
+        overflowButton.isEnabled = !offline
+        overflowButton.alpha = if (offline) 0.35f else 1.0f
+        reminderAdapter.setReadOnly(offline)
+        updateEmptyState()
+    }
+
+    private fun updateEmptyState() {
+        addReminderButton.visibility =
+            if (currentReminders.isEmpty() && !isOffline) View.VISIBLE else View.GONE
     }
 
     private fun showOverflowMenu() {
