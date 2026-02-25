@@ -68,9 +68,9 @@ def get_reminders():
     cfg = config.Config(info)
 
     user = g.username
-    pw_hash = auth.get_pw_hash(user)
+    enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     for r in reminders:
         if cfg.getTimeZone():
@@ -108,9 +108,9 @@ def delete_reminder():
     cfg = config.Config(info)
 
     user = g.username
-    pw_hash = auth.get_pw_hash(user)
+    enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True,  pw_hash)
+    datasource = yamldatasource.YamlDataSource(cfg, user, True,  enc_key)
     reminders = datasource.loadReminders()
     filtered = []
     for r in reminders:
@@ -135,9 +135,9 @@ def add_reminder():
     cfg = config.Config(info)
 
     user = g.username
-    pw_hash = auth.get_pw_hash(user)
+    enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -204,9 +204,9 @@ def add_reminder_ai():
     cfg = config.Config(info)
 
     user = g.username
-    pw_hash = auth.get_pw_hash(user)
+    enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -279,6 +279,25 @@ def signup():
 
     token, _ = auth.issue_token(username)
     return jsonify({"username": username, "token": token}), 200
+
+@app.route('/change_password', methods=['POST'])
+@auth.require_user
+def change_password():
+    data = request.json or {}
+    current_password = (data.get("CurrentPassword") or "").strip()
+    new_password = (data.get("NewPassword") or "").strip()
+    confirm_password = (data.get("ConfirmPassword") or "").strip()
+
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"message": "All password fields are required"}), 400
+    if new_password != confirm_password:
+        return jsonify({"message": "New passwords do not match"}), 400
+
+    err = auth.change_password(g.username, current_password, new_password)
+    if err:
+        return jsonify({"message": err}), 400
+
+    return jsonify({"message": "Password changed successfully"}), 200
 
 if __name__ == "__main__":
     # app.run(debug=True)

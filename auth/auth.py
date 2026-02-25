@@ -58,6 +58,7 @@ def create_user(username: str, password: str):
             "pw_hash": pw_hash,
             "created": _now_iso(),
         },
+        "enc_key": pw_hash,
         "tokens": []
     }
     _set_user(doc, username, user_obj)
@@ -82,6 +83,28 @@ def get_pw_hash(username: str) -> str:
         return ""
     pw = user.get("password") or {}
     return pw.get("pw_hash") or ""
+
+def get_enc_key(username: str) -> str:
+    doc = _load_auth()
+    user = _get_user(doc, username)
+    if not user:
+        return ""
+    return user.get("enc_key") or ""
+
+def change_password(username: str, current_password: str, new_password: str) -> str | None:
+    """Verify current password and update pw_hash. Returns error message or None on success."""
+    doc = _load_auth()
+    user = _get_user(doc, username)
+    if not user:
+        return "User not found"
+    pw = user.get("password") or {}
+    salt = pw.get("salt") or ""
+    if _hash_password(current_password, salt) != (pw.get("pw_hash") or ""):
+        return "Current password is incorrect"
+    user["password"]["pw_hash"] = _hash_password(new_password, salt)
+    _set_user(doc, username, user)
+    _save_auth(doc)
+    return None
 
 def issue_token(username: str):
     # return: (raw_token, token_sha256)
