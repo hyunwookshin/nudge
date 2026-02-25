@@ -273,6 +273,10 @@ def signup():
     if password != password2:
         return jsonify({"message": "Password mismatch"}), 400
 
+    pw_err = auth.validate_password(password)
+    if pw_err:
+        return jsonify({"message": pw_err}), 400
+
     user_obj, err = auth.create_user(username, password)
     if err:
         return jsonify({"message": err}), 409

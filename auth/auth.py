@@ -44,6 +44,18 @@ def _hash_password(password: str, salt_b64: str) -> str:
     # simple: sha256(salt + ":" + password)
     return _sha256_hex(f"{salt_b64}:{password}")
 
+def validate_password(password: str) -> str | None:
+    """Returns an error message if invalid, None if valid."""
+    if len(password) < 6:
+        return "Password must be at least 6 characters"
+    if not any(c.isupper() for c in password):
+        return "Password must contain an uppercase letter"
+    if not any(c.islower() for c in password):
+        return "Password must contain a lowercase letter"
+    if not any(c.isdigit() for c in password):
+        return "Password must contain a number"
+    return None
+
 def create_user(username: str, password: str):
     doc = _load_auth()
     if _get_user(doc, username) is not None:
