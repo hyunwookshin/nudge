@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Callback
 import retrofit2.Response
-import com.google.android.material.snackbar.Snackbar
 import retrofit2.Call
 import java.util.Calendar
 import java.time.LocalDate
@@ -261,13 +260,11 @@ class ReminderListFragment : Fragment(), Refreshable {
 
                 } else {
                     showOffline(true)
-                    Snackbar.make(requireView(), "Failed to load reminders", Snackbar.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
                 if (!isAdded || view == null) return
-                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
                 progressBar.visibility = View.GONE
                 showOffline(true)
             }
