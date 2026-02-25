@@ -88,8 +88,10 @@ def get_enc_key(username: str) -> str:
     doc = _load_auth()
     user = _get_user(doc, username)
     if not user:
+        print("Not user")
         return ""
-    return user.get("enc_key") or ""
+    pw = user.get("password") or {}
+    return pw.get("enc_key") or ""
 
 def change_password(username: str, current_password: str, new_password: str) -> str | None:
     """Verify current password and update pw_hash. Returns error message or None on success."""
