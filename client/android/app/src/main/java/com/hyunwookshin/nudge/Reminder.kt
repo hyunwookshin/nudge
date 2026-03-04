@@ -14,6 +14,7 @@ data class Reminder(
     val Key: String,
     val Snooze: Int,
     val Read: String,
+    val Repeat: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
@@ -25,7 +26,8 @@ data class Reminder(
         parcel.readInt(),
         parcel.readString() ?: "",
         parcel.readInt(),
-        parcel.readString() ?: ""
+        parcel.readString() ?: "",
+        parcel.readInt()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -36,6 +38,10 @@ data class Reminder(
         parcel.writeString(Id)
         parcel.writeString(Link)
         parcel.writeInt(Priority)
+        parcel.writeString(Key)
+        parcel.writeInt(Snooze)
+        parcel.writeString(Read)
+        parcel.writeInt(Repeat)
     }
 
     override fun describeContents(): Int {

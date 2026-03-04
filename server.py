@@ -207,6 +207,7 @@ def add_reminder():
     info["Priority"] = int(data["Priority"])
     info["Closed"] = False
     info["Snooze"] = data.get("Snooze", 0)
+    info["Repeat"] = int(data.get("Repeat", 0))
     info["Id"] = id
     r = reminder.Reminder(info)
     orig_reminders = reminders[:]

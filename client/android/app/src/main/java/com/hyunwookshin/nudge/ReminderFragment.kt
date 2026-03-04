@@ -37,6 +37,7 @@ class ReminderFragment : Fragment() {
     private lateinit var timeButton: Button
     private lateinit var linkEditText: EditText
     private lateinit var prioritySpinner: Spinner
+    private lateinit var repeatSpinner: Spinner
     private lateinit var saveButton: Button
     private lateinit var passwordEditText: EditText
     private lateinit var snoozeSpinner: Spinner
@@ -124,6 +125,7 @@ class ReminderFragment : Fragment() {
         linkEditText = view.findViewById(R.id.linkEditText)
         passwordEditText = view.findViewById(R.id.passwordEditText)
         prioritySpinner = view.findViewById(R.id.prioritySpinner)
+        repeatSpinner = view.findViewById(R.id.repeatSpinner)
         saveButton = view.findViewById(R.id.saveButton)
         snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
         idEditText = view.findViewById(R.id.idEditText)
@@ -235,6 +237,11 @@ class ReminderFragment : Fragment() {
             descriptionEditText.setText(it.Description)
             linkEditText.setText(it.Link)
             prioritySpinner.setSelection(it.Priority)
+            repeatSpinner.setSelection(when (it.Repeat) {
+                7 -> 1
+                14 -> 2
+                else -> 0
+            })
             idEditText.setText(it.Id)
 
             //  Parse existing reminder time and set date/time buttons + internal state
@@ -349,6 +356,11 @@ class ReminderFragment : Fragment() {
         val description = descriptionEditText.text.toString()
         val link = linkEditText.text.toString()
         val priority = prioritySpinner.selectedItemPosition
+        val repeat = when (repeatSpinner.selectedItemPosition) {
+            1 -> 7
+            2 -> 14
+            else -> 0
+        }
         val read = selectedTime.toString()
         val key = passwordEditText.text.toString()
         val id = idEditText.text.toString()
@@ -363,7 +375,7 @@ class ReminderFragment : Fragment() {
         val date = selectedDate!!            // yyyy-MM-dd
         val time = selectedTime!!            // HH:mm:00
 
-        val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read)
+        val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read, repeat)
         sendReminder(reminder)
 
         // Clear all text fields except password

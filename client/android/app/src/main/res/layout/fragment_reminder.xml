@@ -195,6 +195,13 @@
         android:entries="@array/priority_array" />
 
     <Spinner
+        android:id="@+id/repeatSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:entries="@array/repeat_array" />
+
+    <Spinner
         android:id="@+id/snoozeSpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
