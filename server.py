@@ -31,14 +31,27 @@ def recent(reminder):
     return (reminder.time - current_utc_time).total_seconds() >= 0
 
 def unpack_repeating(reminders):
-    """Expand repeating reminders into individual instances up to 16 weeks from now."""
-    cutoff = getCurrentUTCTime() + timedelta(weeks=16)
+    """Expand repeating reminders into individual instances up to 16 weeks from now.
+
+    For old repeating reminders we skip directly to the first occurrence that
+    falls near the present, so future instances always appear regardless of how
+    long ago the original event was created.
+    """
+    now = getCurrentUTCTime()
+    cutoff = now + timedelta(weeks=16)
     result = []
     for r in reminders:
         if r.repeat == 0:
             result.append(r)
             continue
-        n = 0
+        # Jump ahead to the occurrence just before 'now' so we don't iterate
+        # through hundreds of past instances for old repeating reminders.
+        if r.time < now:
+            elapsed_days = (now - r.time).total_seconds() / 86400
+            n_start = max(0, int(elapsed_days / r.repeat) - 1)
+        else:
+            n_start = 0
+        n = n_start
         while True:
             instance_time = r.time + timedelta(days=n * r.repeat)
             if instance_time > cutoff:
