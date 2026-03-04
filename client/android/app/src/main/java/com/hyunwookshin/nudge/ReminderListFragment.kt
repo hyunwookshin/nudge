@@ -459,62 +459,66 @@ class ReminderListFragment : Fragment(), Refreshable {
         val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
         val header = view.findViewById<View>(R.id.miniCalendarHeader)
 
-        fun attach(target: View) {
-            val detector = GestureDetector(requireContext(),
-                object : GestureDetector.SimpleOnGestureListener() {
+        val detector = GestureDetector(requireContext(),
+            object : GestureDetector.SimpleOnGestureListener() {
 
-                    private val SWIPE_DISTANCE = 5   // px
-                    private val SWIPE_VELOCITY = 50  // px/sec
+                private val SWIPE_DISTANCE = 5   // px
+                private val SWIPE_VELOCITY = 50  // px/sec
 
-                    override fun onDown(e: MotionEvent): Boolean = true
+                override fun onDown(e: MotionEvent): Boolean = true
 
-                    override fun onFling(
-                        e1: MotionEvent?,
-                        e2: MotionEvent,
-                        velocityX: Float,
-                        velocityY: Float
-                    ): Boolean {
-                        if (e1 == null) return false
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    if (e1 == null) return false
 
-                        val dx = e2.x - e1.x
-                        val dy = e2.y - e1.y
+                    val dx = e2.x - e1.x
+                    val dy = e2.y - e1.y
 
-                        val absDx = abs(dx)
-                        val absDy = abs(dy)
+                    val absDx = abs(dx)
+                    val absDy = abs(dy)
 
-                        // Horizontal month swipe
-                        if (absDx > absDy) {
-                            if (absDx < SWIPE_DISTANCE) return false
-                            if (abs(velocityX) < SWIPE_VELOCITY) return false
+                    // Horizontal month swipe
+                    if (absDx > absDy) {
+                        if (absDx < SWIPE_DISTANCE) return false
+                        if (abs(velocityX) < SWIPE_VELOCITY) return false
 
-                            if (dx < 0) jumpMonthMiniCalendar(+1) else jumpMonthMiniCalendar(-1)
-                            return true
-                        }
-
-                        // Vertical 2-week swipe
-                        if (absDy < SWIPE_DISTANCE) return false
-                        if (abs(velocityY) < SWIPE_VELOCITY) return false
-
-                        if (dy < 0) {
-                            // swipe up => go forward 2 weeks
-                            jumpWeeksMiniCalendar(+2)
-                        } else {
-                            // swipe down => go back 2 weeks
-                            jumpWeeksMiniCalendar(-2)
-                        }
+                        if (dx < 0) jumpMonthMiniCalendar(+1) else jumpMonthMiniCalendar(-1)
                         return true
                     }
-                })
 
-            target.setOnTouchListener { _, ev ->
-                // If detector handled it, consume it.
-                detector.onTouchEvent(ev)
+                    // Vertical 2-week swipe
+                    if (absDy < SWIPE_DISTANCE) return false
+                    if (abs(velocityY) < SWIPE_VELOCITY) return false
+
+                    if (dy < 0) {
+                        jumpWeeksMiniCalendar(+2)
+                    } else {
+                        jumpWeeksMiniCalendar(-2)
+                    }
+                    return true
+                }
+            })
+
+        // addOnItemTouchListener intercepts events before any child cell gets them,
+        // so the GestureDetector always sees ACTION_DOWN on the first swipe.
+        rv.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                detector.onTouchEvent(e)
+                return false // let clicks through to day cells
             }
-        }
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        })
 
-        // attach to both (header is easy to swipe, rv is where finger usually is)
-        attach(header)
-        attach(rv)
+        // Header has no children so setOnTouchListener is fine there.
+        header.setOnTouchListener { _, ev ->
+            detector.onTouchEvent(ev)
+            true
+        }
     }
 
     private fun showLoading() {
