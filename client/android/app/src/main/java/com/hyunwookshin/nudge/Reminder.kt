@@ -4,16 +4,16 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class Reminder(
-    val Title: String,
-    val Description: String,
-    val Date: String,
-    val Time: String,
-    var Id: String,
-    val Link: String,
-    val Priority: Int,
-    val Key: String,
-    val Snooze: Int,
-    val Read: String,
+    val Title: String = "",
+    val Description: String = "",
+    val Date: String = "",
+    val Time: String = "",
+    var Id: String = "",
+    val Link: String = "",
+    val Priority: Int = 2,
+    val Key: String = "",
+    val Snooze: Int = 0,
+    val Read: String = "",
     val Repeat: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
