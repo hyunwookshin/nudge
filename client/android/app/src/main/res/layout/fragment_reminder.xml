@@ -65,9 +65,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="Generate"
+                android:textAllCaps="false"
                 android:background="@drawable/rounded_corner"
-                android:backgroundTint="#FFFFFF"
-                android:textColor="#923ECD" />
+                android:backgroundTint="#FFFFFF" />
             <ImageButton
                 android:id="@+id/voiceButton"
                 android:layout_width="48dp"
@@ -134,6 +134,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_corner"
             android:layout_margin="4dp"
+            android:textAllCaps="false"
             android:text="Date" />
 
         <Button
@@ -142,6 +143,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_corner"
             android:layout_margin="4dp"
+            android:textAllCaps="false"
             android:text="Time" />
     </LinearLayout>
 
@@ -201,25 +203,29 @@
         android:entries="@array/snooze_array" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="end|center_vertical">
         <Button
             android:id="@+id/saveButton"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_corner"
             android:layout_margin="4dp"
+            android:textAllCaps="false"
             android:text="Save" />
 
         <Button
             android:id="@+id/goBackButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Go Back"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:textColor="@color/colorPrimaryDark"
             android:layout_margin="4dp"
-            android:background="@drawable/rounded_corner"
             android:layout_gravity="center" />
     </LinearLayout>
 
