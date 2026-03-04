@@ -83,9 +83,12 @@ def get_reminders():
             r.time = r.time.astimezone(timezone(offset))
             r.read = r.read.astimezone(timezone(offset))
 
-    if include == "all":
-        return jsonify({ "reminders" : [ r.toInfo() for r in reminders ] }), 200
-    return jsonify({ "reminders" : [ r.toInfo() for r in reminders if recent(r) ] }), 200
+    try:
+        days = int(include)
+        cutoff = getCurrentUTCTime() - timedelta(days=days)
+        return jsonify({ "reminders": [ r.toInfo() for r in reminders if r.time >= cutoff ] }), 200
+    except (ValueError, TypeError):
+        return jsonify({ "reminders": [ r.toInfo() for r in reminders if recent(r) ] }), 200
 
 def replaceWords(speller, string, preservedWords):
     tokens = string.split()

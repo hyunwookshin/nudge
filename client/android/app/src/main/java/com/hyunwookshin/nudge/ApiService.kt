@@ -40,10 +40,7 @@ interface ApiService {
     fun addReminderAI(@Body req: AddReminderAiRequest): Call<AddReminderAiResponse>
 
     @GET("/reminders")
-    fun getReminders(): Call<ReminderResponse>
-
-    @GET("/reminders")
-    fun getAllReminders(@Query("include") include: String = "all"): Call<ReminderResponse>
+    fun getReminders(@Query("include") include: Int? = null): Call<ReminderResponse>
 
     @POST("/change_password")
     fun changePassword(@Body req: ChangePasswordRequest): Call<MessageResponse>

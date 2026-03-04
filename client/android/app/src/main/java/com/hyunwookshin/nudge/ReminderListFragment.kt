@@ -51,7 +51,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var calendarContainer: View
 
     // Pills
-    private enum class Period { CURRENT, ALL_TIME }
+    private enum class Period { CURRENT, SEVEN_DAYS, THIRTY_DAYS }
     private var period: Period = Period.CURRENT
     private lateinit var periodPill: com.google.android.material.button.MaterialButton
     private lateinit var calendarTogglePill : com.google.android.material.button.MaterialButton
@@ -99,7 +99,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     private fun renderPeriodPill() {
         periodPill.text = when (period) {
             Period.CURRENT -> "Current"
-            Period.ALL_TIME -> "All Time"
+            Period.SEVEN_DAYS -> "Past 7 Days"
+            Period.THIRTY_DAYS -> "Past 30 Days"
         }
     }
 
@@ -113,12 +114,14 @@ class ReminderListFragment : Fragment(), Refreshable {
     private fun showPeriodMenu(anchor: View) {
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "Current")
-        popup.menu.add(0, 2, 1, "All Time")
+        popup.menu.add(0, 2, 1, "Past 7 Days")
+        popup.menu.add(0, 3, 2, "Past 30 Days")
 
         popup.setOnMenuItemClickListener { item ->
             val newPeriod = when (item.itemId) {
                 1 -> Period.CURRENT
-                2 -> Period.ALL_TIME
+                2 -> Period.SEVEN_DAYS
+                3 -> Period.THIRTY_DAYS
                 else -> period
             }
 
@@ -224,8 +227,9 @@ class ReminderListFragment : Fragment(), Refreshable {
     private fun fetchReminders() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call: Call<ReminderResponse> = when (period) {
-            Period.CURRENT -> apiService.getReminders()        // current only
-            Period.ALL_TIME -> apiService.getAllReminders()    // all reminders
+            Period.CURRENT -> apiService.getReminders()
+            Period.SEVEN_DAYS -> apiService.getReminders(include = 7)
+            Period.THIRTY_DAYS -> apiService.getReminders(include = 30)
         }
         call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {

@@ -413,7 +413,7 @@ class ReminderFragment : Fragment() {
 
     private fun fetchAllReminders() {
         val apiService = ApiClient.getClient().create(ApiService::class.java)
-        val call = apiService.getAllReminders()
+        val call = apiService.getReminders(include = 30)
         beginLoading()
 
         call.enqueue(object : Callback<ReminderResponse> {
