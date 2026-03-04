@@ -90,6 +90,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Previous month"
             android:padding="12dp"
+            app:tint="@color/colorTextPrimary"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
@@ -118,6 +119,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Next month"
             android:padding="12dp"
+            app:tint="@color/colorTextPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
