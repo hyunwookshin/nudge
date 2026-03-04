@@ -525,6 +525,9 @@ class ReminderListFragment : Fragment(), Refreshable {
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
         todayText.text = "$base   •   Loading…"
+        overflowButton.isEnabled = false
+        overflowButton.alpha = 0.35f
+        reminderAdapter.setReadOnly(true)
     }
 
     private fun showOffline(offline: Boolean) {
