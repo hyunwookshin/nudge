@@ -139,12 +139,13 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             } else {
                 ContextCompat.getColor(itemView.context, R.color.low_priority)
             }
+            val isVirtual = reminder.Id.matches(Regex(".*_r\\d+$"))
             if (readOnly) {
                 editButton.visibility = View.GONE
                 copyButton.visibility = View.GONE
                 deleteButton.visibility = View.GONE
             } else {
-                editButton.visibility = View.VISIBLE
+                editButton.visibility = if (isVirtual) View.GONE else View.VISIBLE
                 copyButton.visibility = View.VISIBLE
                 deleteButton.visibility = View.VISIBLE
             }
@@ -155,12 +156,25 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 reminderCallback?.onCopyReminder(reminder)
             }
             deleteButton.setOnClickListener {
+                val title: String
+                val message: String
+                val reminderToDelete: Reminder
+                if (isVirtual) {
+                    val baseId = reminder.Id.replace(Regex("_r\\d+$"), "")
+                    reminderToDelete = reminder.copy(Id = baseId)
+                    title = "Delete recurring series?"
+                    message = "This will remove all occurrences of this reminder. This can’t be undone."
+                } else {
+                    reminderToDelete = reminder
+                    title = "Delete reminder?"
+                    message = "This can’t be undone."
+                }
                 val dialog = MaterialAlertDialogBuilder(itemView.context, R.style.RoundedMaterialDialog)
-                    .setTitle("Delete reminder?")
-                    .setMessage("This can’t be undone.")
+                    .setTitle(title)
+                    .setMessage(message)
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Delete") { _, _ ->
-                        reminderCallback?.onDeleteReminder(reminder)
+                        reminderCallback?.onDeleteReminder(reminderToDelete)
                     }
                     .show()
                 dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
