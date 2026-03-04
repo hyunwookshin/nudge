@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
 
 
     testImplementation(libs.junit)

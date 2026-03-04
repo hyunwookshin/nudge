@@ -58,6 +58,7 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     // Empty state
     private lateinit var addReminderButton: com.google.android.material.button.MaterialButton
+    private lateinit var shimmerLayout: com.facebook.shimmer.ShimmerFrameLayout
     private var isOffline = false
 
     // DB for caching
@@ -154,6 +155,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        shimmerLayout = view.findViewById(R.id.shimmerLayout)
         addReminderButton = view.findViewById(R.id.addReminderButton)
         addReminderButton.setOnClickListener {
             val fragment = ReminderFragment.newInstance()
@@ -528,9 +530,11 @@ class ReminderListFragment : Fragment(), Refreshable {
         overflowButton.isEnabled = false
         overflowButton.alpha = 0.35f
         reminderAdapter.setReadOnly(true)
+        shimmerLayout.startShimmer()
     }
 
     private fun showOffline(offline: Boolean) {
+        shimmerLayout.hideShimmer()
         isOffline = offline
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
