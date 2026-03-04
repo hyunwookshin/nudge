@@ -13,8 +13,9 @@ class Reminder():
         self.priority = info["Priority"]
         self.closed = info["Closed"]
         self.snooze = info.get("Snooze", 0)
+        self.repeat = info.get("Repeat", 0)
         timestamp_str = info.get("Read", info["Time"])
-        self.read = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) 
+        self.read = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         self.id = info.get("Id", self.gen_id(str(time.time())))
         if not self.id:
             self.id = self.gen_id(str(time.time()))
@@ -39,6 +40,7 @@ class Reminder():
             "Priority": self.priority,
             "Closed": self.closed,
             "Snooze": self.snooze,
+            "Repeat": self.repeat,
             "Id": self.id
         }
         return info

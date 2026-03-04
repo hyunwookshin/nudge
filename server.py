@@ -2,6 +2,7 @@
 
 from flask import Flask, request, jsonify, g
 from datetime import datetime, timedelta, timezone
+import copy
 import pytz
 import yaml
 import os
@@ -28,6 +29,27 @@ def getCurrentUTCTime():
 def recent(reminder):
     current_utc_time = getCurrentUTCTime()
     return (reminder.time - current_utc_time).total_seconds() >= 0
+
+def unpack_repeating(reminders):
+    """Expand repeating reminders into individual instances up to 16 weeks from now."""
+    cutoff = getCurrentUTCTime() + timedelta(weeks=16)
+    result = []
+    for r in reminders:
+        if r.repeat == 0:
+            result.append(r)
+            continue
+        n = 0
+        while True:
+            instance_time = r.time + timedelta(days=n * r.repeat)
+            if instance_time > cutoff:
+                break
+            instance = copy.copy(r)
+            instance.time = instance_time
+            if n > 0:
+                instance.id = f"{r.id}_r{n}"
+            result.append(instance)
+            n += 1
+    return result
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -82,6 +104,8 @@ def get_reminders():
             offset = timedelta(hours=cfg.getTimeZoneOffset())
             r.time = r.time.astimezone(timezone(offset))
             r.read = r.read.astimezone(timezone(offset))
+
+    reminders = unpack_repeating(reminders)
 
     try:
         days = int(include)
