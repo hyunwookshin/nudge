@@ -60,6 +60,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var addReminderButton: com.google.android.material.button.MaterialButton
     private lateinit var shimmerLayout: com.facebook.shimmer.ShimmerFrameLayout
     private var isOffline = false
+    private var isLoading = false
 
     // DB for caching
     private lateinit var db: AppDb
@@ -314,6 +315,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun showDayMenu(date: LocalDate, anchor: View) {
+        if (isLoading || isOffline) return
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "+ Add Event")
         popup.setOnMenuItemClickListener { item ->
@@ -531,10 +533,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         overflowButton.alpha = 0.35f
         reminderAdapter.setReadOnly(true)
         shimmerLayout.startShimmer()
+        isLoading = true
     }
 
     private fun showOffline(offline: Boolean) {
         shimmerLayout.hideShimmer()
+        isLoading = false
         isOffline = offline
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
