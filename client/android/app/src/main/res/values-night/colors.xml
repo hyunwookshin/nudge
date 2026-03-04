@@ -5,6 +5,7 @@
     <color name="colorBackground">#0A4747</color>
     <color name="colorTextPrimary">#F8F8F8</color>
     <color name="colorTextSecondary">#BDB5B5</color>
+    <color name="colorCalendarBorder">#40BDB5B5</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="high_priority">#713B40</color>

@@ -2,6 +2,9 @@ package com.hyunwookshin.nudge
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -172,7 +175,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 linkButton.visibility = View.GONE
                 linkButton.setOnClickListener(null)
             }
-            cardRoot.background?.mutate()?.setTint(backgroundColor)
+            val isDarkMode = (itemView.context.resources.configuration.uiMode and
+                    Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            val strokeColor = adjustBrightness(backgroundColor, isDarkMode)
+            val density = itemView.context.resources.displayMetrics.density
+            val drawable = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 12f * density
+                setColor(backgroundColor)
+                setStroke((density + 0.5f).toInt(), strokeColor)
+            }
+            cardRoot.background = drawable
 
             // For updating the mini calendar anchored to the reminder
             itemView.setOnClickListener {
@@ -183,6 +196,27 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 copyReminderToClipboard(itemView.context, reminder)
                 true
             }
+        }
+    }
+
+    private fun adjustBrightness(color: Int, lighten: Boolean): Int {
+        val r = Color.red(color)
+        val g = Color.green(color)
+        val b = Color.blue(color)
+        return if (lighten) {
+            val factor = 0.30f
+            Color.rgb(
+                (r + (255 - r) * factor).toInt(),
+                (g + (255 - g) * factor).toInt(),
+                (b + (255 - b) * factor).toInt()
+            )
+        } else {
+            val factor = 0.20f
+            Color.rgb(
+                (r * (1f - factor)).toInt(),
+                (g * (1f - factor)).toInt(),
+                (b * (1f - factor)).toInt()
+            )
         }
     }
 
