@@ -155,7 +155,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 reminderCallback?.onCopyReminder(reminder)
             }
             deleteButton.setOnClickListener {
-                MaterialAlertDialogBuilder(itemView.context)
+                val dialog = MaterialAlertDialogBuilder(itemView.context, R.style.RoundedMaterialDialog)
                     .setTitle("Delete reminder?")
                     .setMessage("This can’t be undone.")
                     .setNegativeButton("Cancel", null)
@@ -163,6 +163,10 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                         reminderCallback?.onDeleteReminder(reminder)
                     }
                     .show()
+                dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(android.graphics.Color.parseColor("#E53935"))
+                dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(ContextCompat.getColor(itemView.context, R.color.colorTextPrimary))
             }
             val link = reminder.Link
             if (!link.isNullOrBlank()) {
