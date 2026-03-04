@@ -212,7 +212,7 @@ class ReminderListFragment : Fragment(), Refreshable {
             }
 
             if (cached.isNotEmpty()) {
-                showOffline(true)
+                showLoading()
 
                 currentReminders = cached.sortedBy { it.Time }
                 reminderAdapter.setReminders(currentReminders)
@@ -225,6 +225,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun fetchReminders() {
+        showLoading()
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call: Call<ReminderResponse> = when (period) {
             Period.CURRENT -> apiService.getReminders()
@@ -514,6 +515,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         // attach to both (header is easy to swipe, rv is where finger usually is)
         attach(header)
         attach(rv)
+    }
+
+    private fun showLoading() {
+        val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+        val base = "Today is " + LocalDate.now().format(fmt)
+        todayText.text = "$base   •   Loading…"
     }
 
     private fun showOffline(offline: Boolean) {
