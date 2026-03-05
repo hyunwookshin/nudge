@@ -44,4 +44,7 @@ interface ApiService {
 
     @POST("/change_password")
     fun changePassword(@Body req: ChangePasswordRequest): Call<MessageResponse>
+
+    @POST("/delete_account")
+    fun deleteAccount(): Call<MessageResponse>
 }
