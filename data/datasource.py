@@ -11,3 +11,9 @@ class DataSource:
     '''
     def storeReminders(self, reminders):
         pass
+
+    '''
+    Deletes all data for the user (reminders directory)
+    '''
+    def deleteUser(self):
+        pass

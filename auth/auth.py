@@ -167,5 +167,14 @@ def require_user(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+def delete_user(username: str) -> str | None:
+    """Remove user from auth.yaml. Returns error message or None on success."""
+    doc = _load_auth()
+    if _get_user(doc, username) is None:
+        return "User not found"
+    doc["users"].pop(username)
+    _save_auth(doc)
+    return None
+
 def load_auth_db():
     return _load_auth()

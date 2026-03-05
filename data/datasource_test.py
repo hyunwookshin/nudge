@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import unittest
+import os
+import shutil
 from datetime import datetime, timezone
 import yaml
 
@@ -29,10 +31,13 @@ class TestYamlDataSource(unittest.TestCase):
         # Mock configuration
         self.config = TestConfig()
         self.data_source = yamldatasource.YamlDataSource(self.config, "test_user")
+        os.makedirs(self.config.getStorePath() + "/users/test_user", exist_ok=True)
 
     def tearDown(self):
-        with open(self.config.getStorePath() + "/users/test_user/reminders.yaml", "w") as f:
-            f.write('')
+        user_dir = self.config.getStorePath() + "/users/test_user"
+        if os.path.exists(user_dir):
+            with open(user_dir + "/reminders.yaml", "w") as f:
+                f.write('')
 
     def test_loadReminders(self):
         # Test loading reminders from YAML data
@@ -76,6 +81,16 @@ class TestYamlDataSource(unittest.TestCase):
         self.assertEqual(reminders_from_yaml[0]["Link"], "http://example.com")
         self.assertEqual(reminders_from_yaml[0]["Closed"], False)
         self.assertEqual(reminders_from_yaml[0]["Priority"], 2)
+
+    def test_deleteUser(self):
+        # Ensure reminders file exists first
+        with open(self.config.getStorePath() + "/users/test_user/reminders.yaml", "w") as f:
+            f.write(sample_yaml_data)
+
+        self.data_source.deleteUser()
+
+        user_dir = self.config.getStorePath() + "/users/test_user"
+        self.assertFalse(os.path.exists(user_dir))
 
 if __name__ == "__main__":
     unittest.main()

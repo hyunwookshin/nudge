@@ -325,6 +325,26 @@ def signup():
     token, _ = auth.issue_token(username)
     return jsonify({"username": username, "token": token}), 200
 
+@app.route('/delete_account', methods=['POST'])
+@auth.require_user
+def delete_account():
+    username = g.username
+
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    enc_key = auth.get_enc_key(username)
+    datasource = yamldatasource.YamlDataSource(cfg, username, True, enc_key)
+    datasource.deleteUser()
+
+    err = auth.delete_user(username)
+    if err:
+        return jsonify({"message": err}), 500
+
+    return jsonify({"message": "Account deleted successfully"}), 200
+
 @app.route('/change_password', methods=['POST'])
 @auth.require_user
 def change_password():

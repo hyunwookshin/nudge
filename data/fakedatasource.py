@@ -20,3 +20,6 @@ class FakeDataSource:
 
     def storeReminders(self, reminders):
         self.reminders = reminders
+
+    def deleteUser(self):
+        self.reminders = []

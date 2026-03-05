@@ -1,4 +1,5 @@
 import os
+import shutil
 import yaml
 import hashlib
 
@@ -74,3 +75,8 @@ class YamlDataSource:
         with open(self.getYamlReminderPath(), "w") as f:
             text = yaml.safe_dump(infos, default_flow_style=False, indent=4)
             f.write(text.strip())
+
+    def deleteUser(self):
+        user_dir = os.path.join(self.config.getStorePath(), "users", self.user)
+        if os.path.exists(user_dir):
+            shutil.rmtree(user_dir)
