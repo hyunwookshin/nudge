@@ -254,15 +254,19 @@ class ReminderListFragment : Fragment(), Refreshable {
                     currentReminders = reminders
                     reminderAdapter.setReminders(reminders)
                     updateEmptyState()
+                    // Always reset calendar to today on refresh
+                    miniCalAnchor = LocalDate.now()
                     miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
                     updateMiniCalendarMonth(miniCalAnchor)
-                    // Also scroll to the anchor date
+                    // Scroll to first reminder on/after today, or top if none
                     val idx = findFirstReminderIndexOnOrAfter(miniCalAnchor)
-                    if (idx >= 0) {
-                        recyclerView.post {
-                            val offsetPx =
-                                (recyclerView.resources.displayMetrics.density).toInt() // 32dp
+                    recyclerView.post {
+                        val offsetPx =
+                            (recyclerView.resources.displayMetrics.density).toInt() // 32dp
+                        if (idx >= 0) {
                             recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                        } else {
+                            recyclerView.scrollToPosition(0)
                         }
                     }
                     // cache to DB
