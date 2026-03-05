@@ -29,6 +29,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 // For creating a new reminder
 private val argDateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -63,6 +64,8 @@ class ReminderListFragment : Fragment(), Refreshable {
     private var isOffline = false
     private var isLoading = false
     private var offlineDialogShown = false
+
+    private lateinit var swipeRefresh: SwipeRefreshLayout
 
     // DB for caching
     private lateinit var db: AppDb
@@ -159,6 +162,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         super.onViewCreated(view, savedInstanceState)
 
         shimmerLayout = view.findViewById(R.id.shimmerLayout)
+        swipeRefresh = view.findViewById(R.id.swipeRefresh)
+        swipeRefresh.setOnRefreshListener { fetchReminders() }
         addReminderButton = view.findViewById(R.id.addReminderButton)
         addReminderButton.setOnClickListener {
             val fragment = ReminderFragment.newInstance()
@@ -536,12 +541,15 @@ class ReminderListFragment : Fragment(), Refreshable {
         periodPill.isEnabled = false
         periodPill.alpha = 0.35f
         reminderAdapter.setReadOnly(true)
-        shimmerLayout.startShimmer()
+        // Skip shimmer when using swipe-to-refresh (spinner already shows)
+        if (!swipeRefresh.isRefreshing) shimmerLayout.startShimmer()
         isLoading = true
     }
 
     private fun showOffline(offline: Boolean) {
         shimmerLayout.hideShimmer()
+        swipeRefresh.isRefreshing = false
+        val wasOffline = isOffline
         isLoading = false
         isOffline = offline
         if (offline && !offlineDialogShown) {
@@ -552,6 +560,8 @@ class ReminderListFragment : Fragment(), Refreshable {
                 .setPositiveButton("Got it", null)
                 .show()
         }
+        // Going offline→online resets the dialog flag so it shows again next time
+        if (wasOffline && !offline) offlineDialogShown = false
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
         todayText.text = if (offline) "$base   •   Offline" else base
