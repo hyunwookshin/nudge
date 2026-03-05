@@ -1,69 +1,124 @@
-// Mapping for priority levels to text and colors
+const API = 'FILL_IN_HOSTNAME';
+
 const priorityMap = {
-     0: { label: "Very High Priority", color: "darkred" },
-     1: { label: "High Priority", color: "red" },
-     2: { label: "Medium Priority", color: "yellow" },
-     3: { label: "Low Priority", color: "green" },
+  0: { label: "Very High Priority", color: "darkred" },
+  1: { label: "High Priority", color: "red" },
+  2: { label: "Medium Priority", color: "goldenrod" },
+  3: { label: "Low Priority", color: "green" },
 };
 
-// Function to calculate "time from now"
-function getTimeFromNow(dateString) {
-  const now = new Date();
-  const reminderDate = new Date(dateString);
-  const diffMs = reminderDate - now;
+// --- Auth helpers ---
 
-  if (diffMs < 0) {
-    // Past event
-    const diffHours = Math.abs(diffMs) / (1000 * 60 * 60);
-    if (diffHours < 24) {
-      return `${Math.floor(diffHours)} hours ago`;
-    } else {
-      return `${Math.floor(diffHours / 24)} days ago`;
-    }
-  } else {
-    // Future event
-    const diffHours = diffMs / (1000 * 60 * 60);
-    if (diffHours < 24) {
-      return `in ${Math.ceil(diffHours)} hours`;
-    } else {
-      return `in ${Math.ceil(diffHours / 24)} days`;
-    }
+function getToken() {
+  return localStorage.getItem('nudge_token');
+}
+
+function getUsername() {
+  return localStorage.getItem('nudge_username');
+}
+
+function showLogin() {
+  document.getElementById('loginSection').style.display = 'block';
+  document.getElementById('appSection').style.display = 'none';
+}
+
+function showApp(username) {
+  document.getElementById('loginSection').style.display = 'none';
+  document.getElementById('appSection').style.display = 'block';
+  document.getElementById('displayUsername').textContent = username;
+  fetchReminders();
+}
+
+function logout() {
+  localStorage.removeItem('nudge_token');
+  localStorage.removeItem('nudge_username');
+  showLogin();
+}
+
+// Wrapper for authenticated fetch — redirects to login on 401
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  options.headers = Object.assign({}, options.headers, { 'X-Nudge-Token': token });
+  const response = await fetch(url, options);
+  if (response.status === 401) {
+    logout();
+    throw new Error('Unauthorized');
   }
+  return response;
 }
 
-// Function to get the day of the week
-function getDayOfWeek(dateString) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
-}
+// --- Login ---
 
-document.getElementById('reminderForm').addEventListener('submit', async function (event) {
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
   event.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg = document.getElementById('loginResponse');
+  msg.textContent = '';
 
+  try {
+    const response = await fetch(API + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Username: username, Password: password }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      localStorage.setItem('nudge_token', data.token);
+      localStorage.setItem('nudge_username', data.username);
+      showApp(data.username);
+    } else {
+      msg.textContent = data.message || 'Login failed.';
+    }
+  } catch (error) {
+    msg.textContent = 'Network error.';
+  }
+});
+
+// --- Logout ---
+
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+// --- Delete Account ---
+
+document.getElementById('deleteAccountBtn').addEventListener('click', async function() {
+  if (!confirm('Delete your account and all reminders? This cannot be undone.')) return;
+  try {
+    const response = await authFetch(API + '/delete_account', { method: 'POST' });
+    if (response.ok) {
+      logout();
+    } else {
+      const data = await response.json();
+      alert(data.message || 'Failed to delete account.');
+    }
+  } catch (error) {
+    if (error.message !== 'Unauthorized') alert('Network error.');
+  }
+});
+
+// --- Add Reminder ---
+
+document.getElementById('reminderForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
   const title = document.getElementById('title').value;
   const description = document.getElementById('description').value;
   const priority = document.getElementById('priority').value;
   const key = document.getElementById('key').value;
-  const dateTime = document.getElementById('dateTime').value; // Input in format YYYY-MM-DDTHH:mm
+  const dateTime = document.getElementById('dateTime').value;
+  const msg = document.getElementById('response');
 
   if (!dateTime) {
-     document.getElementById('response').innerText = 'Please select a date and time.';
-     return;
+    msg.textContent = 'Please select a date and time.';
+    return;
   }
 
-  // Split date and time
   const [date, time] = dateTime.split('T');
-
-
-  // Ensure time includes seconds
   const timeWithSeconds = `${time}:00`;
 
   try {
-    const response = await fetch('FILL_IN_HOSTNAME' + "/add_reminder", {
+    const response = await authFetch(API + '/add_reminder', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         Title: title,
         Description: description,
@@ -74,57 +129,83 @@ document.getElementById('reminderForm').addEventListener('submit', async functio
         Link: '',
       }),
     });
-
     if (response.ok) {
-      document.getElementById('response').innerText = 'Reminder uploaded successfully!';
-      location.reload();
+      msg.textContent = 'Reminder added!';
+      document.getElementById('reminderForm').reset();
+      fetchReminders();
     } else {
-      document.getElementById('response').innerText = 'Failed to upload reminder.';
+      const data = await response.json();
+      msg.textContent = data.message || 'Failed to add reminder.';
     }
   } catch (error) {
-    console.error('Error:', error);
-    document.getElementById('response').innerText = 'Network error.';
+    if (error.message !== 'Unauthorized') msg.textContent = 'Network error.';
   }
 });
 
-// Function to fetch reminders and update the list
+// --- Reminder list ---
+
+function getTimeFromNow(dateString) {
+  const now = new Date();
+  const reminderDate = new Date(dateString);
+  const diffMs = reminderDate - now;
+  if (diffMs < 0) {
+    const h = Math.abs(diffMs) / (1000 * 60 * 60);
+    return h < 24 ? `${Math.floor(h)} hours ago` : `${Math.floor(h / 24)} days ago`;
+  } else {
+    const h = diffMs / (1000 * 60 * 60);
+    return h < 24 ? `in ${Math.ceil(h)} hours` : `in ${Math.ceil(h / 24)} days`;
+  }
+}
+
+function getDayOfWeek(dateString) {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date(dateString));
+}
+
 function fetchReminders() {
-  fetch('FILL_IN_HOSTNAME' + '/reminders')
-    .then(response => response.json())
+  const container = document.getElementById('reminderContainer');
+  container.innerHTML = '<p>Loading...</p>';
+  authFetch(API + '/reminders')
+    .then(r => r.json())
     .then(data => {
-      const reminderContainer = document.getElementById('reminderContainer');
-      reminderContainer.innerHTML = ''; // Clear previous reminders
-
-      // Sort reminders by date in reverse chronological order
-      const sortedReminders = data.reminders.sort((a, b) => {
-        const dateA = new Date(a.Time);
-        const dateB = new Date(b.Time);
-        return dateA - dateB;
-      });
-
-      sortedReminders.forEach(reminder => {
+      container.innerHTML = '';
+      const sorted = (data.reminders || []).sort((a, b) => new Date(a.Time) - new Date(b.Time));
+      if (sorted.length === 0) {
+        container.innerHTML = '<p>No reminders.</p>';
+        return;
+      }
+      sorted.forEach(reminder => {
+        const priority = priorityMap[reminder.Priority] || { label: 'Unknown', color: 'gray' };
         const card = document.createElement('div');
         card.classList.add('reminder-card');
         card.innerHTML = `
           <strong>${reminder.Title}</strong>
           <p>
-            ${getDayOfWeek(reminder.Time)} ${new Date(reminder.Time).toLocaleString()} 
+            ${getDayOfWeek(reminder.Time)} &mdash; ${new Date(reminder.Time).toLocaleString()}
             (${getTimeFromNow(reminder.Time)})
           </p>
           <p>${reminder.Description}</p>
-          <span class="priority-badge" style="background-color: ${priorityMap[reminder.Priority].color}">
-             ${priorityMap[reminder.Priority].label}
+          <span class="priority-badge" style="background-color: ${priority.color}">
+            ${priority.label}
           </span>
         `;
-        reminderContainer.appendChild(card);
+        container.appendChild(card);
       });
     })
     .catch(error => {
-      console.error('Error fetching reminders:', error);
+      if (error.message !== 'Unauthorized') {
+        container.innerHTML = '<p>Failed to load reminders.</p>';
+      }
     });
 }
 
-// Call fetchReminders when the page loads to display reminders
+// --- Init ---
+
 window.onload = function() {
-  fetchReminders();
+  const token = getToken();
+  const username = getUsername();
+  if (token && username) {
+    showApp(username);
+  } else {
+    showLogin();
+  }
 };

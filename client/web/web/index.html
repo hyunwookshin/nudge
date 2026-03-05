@@ -3,35 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nudge - Upload Reminder</title>
+  <title>Nudge</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
-    <h2>Nudge - Upload Reminder</h2>
-    <form id="reminderForm">
-      <label for="title">Title:</label>
-      <input type="text" id="title" name="title" required>
-      <label for="description">Description:</label>
-      <textarea id="description" name="description" required></textarea>
-      <label for="dateTime">Date:</label>
-      <input type="datetime-local" id="dateTime" name="dateTime" required>
-      <label for="priority">Priority:</label>
-      <select id="priority" name="priority" required>
-        <option value="1">High</option>
-        <option value="2">Medium</option>
-        <option value="3">Low</option>
-      </select>
-      <label for="Key">Key:</label>
-      <input type="password" id="key" name="key" required>
-      <button type="submit">Upload</button>
-    </form>
-    <p id="response"></p>
-    <!-- List of Reminders -->
-    <h2>Reminder List</h2>
-    <div id="reminderContainer"></div>
-  </div>
 
+    <!-- Login Section -->
+    <div id="loginSection">
+      <h2>Nudge</h2>
+      <form id="loginForm">
+        <label for="loginUsername">Username:</label>
+        <input type="text" id="loginUsername" autocomplete="username" required>
+        <label for="loginPassword">Password:</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginResponse"></p>
+    </div>
+
+    <!-- App Section (hidden until logged in) -->
+    <div id="appSection" style="display:none">
+      <div class="app-header">
+        <h2>Nudge &mdash; <span id="displayUsername"></span></h2>
+        <div class="header-actions">
+          <button id="logoutBtn" class="secondary-btn">Log Out</button>
+          <button id="deleteAccountBtn" class="danger-btn">Delete Account</button>
+        </div>
+      </div>
+
+      <h3>Add Reminder</h3>
+      <form id="reminderForm">
+        <label for="title">Title:</label>
+        <input type="text" id="title" required>
+        <label for="description">Description:</label>
+        <textarea id="description" required></textarea>
+        <label for="dateTime">Date &amp; Time:</label>
+        <input type="datetime-local" id="dateTime" required>
+        <label for="priority">Priority:</label>
+        <select id="priority" required>
+          <option value="1">High</option>
+          <option value="2">Medium</option>
+          <option value="3">Low</option>
+        </select>
+        <label for="key">Key:</label>
+        <input type="password" id="key" required>
+        <button type="submit">Add Reminder</button>
+      </form>
+      <p id="response"></p>
+
+      <h3>Your Reminders</h3>
+      <div id="reminderContainer"></div>
+    </div>
+
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

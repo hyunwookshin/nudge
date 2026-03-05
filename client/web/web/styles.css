@@ -4,7 +4,7 @@ body {
   padding: 20px;
   display: flex;
   justify-content: center;
-  background-color: #f9f9f9; /* Light background for modern look */
+  background-color: #f9f9f9;
 }
 
 .container {
@@ -130,3 +130,62 @@ button:hover {
   background-color: green; /* Low Priority */
 }
 
+/* App header with logout/delete buttons */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.app-header h2 {
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-btn {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.danger-btn {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: #e53935;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.danger-btn:hover {
+  background-color: #b71c1c;
+}
+
+#loginResponse {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #e53935;
+}
