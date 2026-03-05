@@ -35,25 +35,32 @@
         </div>
       </div>
 
-      <h3>Add Reminder</h3>
-      <form id="reminderForm">
-        <label for="title">Title:</label>
-        <input type="text" id="title" required>
-        <label for="description">Description:</label>
-        <textarea id="description" required></textarea>
-        <label for="dateTime">Date &amp; Time:</label>
-        <input type="datetime-local" id="dateTime" required>
-        <label for="priority">Priority:</label>
-        <select id="priority" required>
-          <option value="1">High</option>
-          <option value="2">Medium</option>
-          <option value="3">Low</option>
-        </select>
-        <label for="key">Key:</label>
-        <input type="password" id="key" required>
-        <button type="submit">Add Reminder</button>
-      </form>
-      <p id="response"></p>
+      <div class="app-banner">
+        <p>For the full experience — adding, editing, and managing reminders — download <strong>Nudge</strong> on Android.</p>
+        <a class="app-store-btn" href="#">Get it on Google Play</a>
+      </div>
+
+      <div style="display:none">
+        <h3>Add Reminder</h3>
+        <form id="reminderForm">
+          <label for="title">Title:</label>
+          <input type="text" id="title" required>
+          <label for="description">Description:</label>
+          <textarea id="description" required></textarea>
+          <label for="dateTime">Date &amp; Time:</label>
+          <input type="datetime-local" id="dateTime" required>
+          <label for="priority">Priority:</label>
+          <select id="priority" required>
+            <option value="1">High</option>
+            <option value="2">Medium</option>
+            <option value="3">Low</option>
+          </select>
+          <label for="key">Key:</label>
+          <input type="password" id="key" required>
+          <button type="submit">Add Reminder</button>
+        </form>
+        <p id="response"></p>
+      </div>
 
       <h3>Your Reminders</h3>
       <div id="reminderContainer"></div>
