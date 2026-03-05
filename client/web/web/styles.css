@@ -189,3 +189,19 @@ button:hover {
   font-size: 14px;
   color: #e53935;
 }
+
+.legal-links {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #999;
+}
+
+.legal-links a {
+  color: #00bcd4;
+  text-decoration: none;
+}
+
+.legal-links a:hover {
+  text-decoration: underline;
+}
