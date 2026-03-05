@@ -25,6 +25,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import kotlin.math.abs
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -61,6 +62,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var shimmerLayout: com.facebook.shimmer.ShimmerFrameLayout
     private var isOffline = false
     private var isLoading = false
+    private var offlineDialogShown = false
 
     // DB for caching
     private lateinit var db: AppDb
@@ -542,6 +544,14 @@ class ReminderListFragment : Fragment(), Refreshable {
         shimmerLayout.hideShimmer()
         isLoading = false
         isOffline = offline
+        if (offline && !offlineDialogShown) {
+            offlineDialogShown = true
+            MaterialAlertDialogBuilder(requireContext(), R.style.RoundedMaterialDialog)
+                .setTitle("You're Offline")
+                .setMessage("Some features such as adding, editing, and deleting reminders are disabled while your phone is offline.")
+                .setPositiveButton("Got it", null)
+                .show()
+        }
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
         todayText.text = if (offline) "$base   •   Offline" else base
