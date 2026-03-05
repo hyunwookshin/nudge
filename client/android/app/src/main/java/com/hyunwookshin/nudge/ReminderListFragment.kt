@@ -531,6 +531,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         todayText.text = "$base   •   Loading…"
         overflowButton.isEnabled = false
         overflowButton.alpha = 0.35f
+        periodPill.isEnabled = false
+        periodPill.alpha = 0.35f
         reminderAdapter.setReadOnly(true)
         shimmerLayout.startShimmer()
         isLoading = true
@@ -545,6 +547,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         todayText.text = if (offline) "$base   •   Offline" else base
         overflowButton.isEnabled = !offline
         overflowButton.alpha = if (offline) 0.35f else 1.0f
+        periodPill.isEnabled = !offline
+        periodPill.alpha = if (offline) 0.35f else 1.0f
         reminderAdapter.setReadOnly(offline)
         updateEmptyState()
     }
