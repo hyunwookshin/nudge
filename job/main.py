@@ -25,10 +25,10 @@ def main(args):
     cfg = config.Config(info)
 
     user = args.user
-    pw_hash = auth.get_pw_hash(user)
-    print(user,info, pw_hash)
+    enc_key = auth.get_enc_key(user)
+    print(user,info, enc_key)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, pw_hash)
+    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     priorities = getPriorities(cfg, args.dryrun)
     actions = Actions(priorities)
 
