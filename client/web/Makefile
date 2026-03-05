@@ -1,4 +1,4 @@
-config: web/script.js config-web
+config: web/script.js web/privacy.html config-web
 
 config-web:
 	sudo cp -r web $(WEB_PUBLISH_DIR)

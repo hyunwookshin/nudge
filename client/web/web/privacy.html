@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nudge – Privacy Policy</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .policy-container {
+      width: 90%;
+      max-width: 700px;
+      padding: 32px;
+      margin: 0 auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      background-color: #ffffff;
+    }
+    .policy-container h1 {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .policy-container .last-updated {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 24px;
+    }
+    .policy-container h2 {
+      font-size: 16px;
+      color: #333;
+      margin-top: 28px;
+      margin-bottom: 6px;
+    }
+    .policy-container h3 {
+      font-size: 14px;
+      color: #555;
+      margin-top: 16px;
+      margin-bottom: 4px;
+    }
+    .policy-container p, .policy-container li {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .policy-container ul {
+      padding-left: 20px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #00bcd4;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    body {
+      padding: 32px 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="policy-container">
+    <a class="back-link" href="index.html">&larr; Back</a>
+    <h1>Nudge – Privacy Policy</h1>
+    <p class="last-updated">Last Updated: February 2026</p>
+
+    <p>This Privacy Policy describes how Nudge ("we", "us", or "our") collects, uses, stores, and protects your information when you use the Nudge reminder application ("the App"). By using the App, you agree to the practices described in this policy.</p>
+
+    <h2>1. Information We Collect</h2>
+
+    <h3>a) Account Information</h3>
+    <p>When you create an account, we collect:</p>
+    <ul>
+      <li>Username (used as your account identifier)</li>
+      <li>Password (stored as a salted cryptographic hash — never in plaintext)</li>
+      <li>Authentication tokens (stored securely on your device and server)</li>
+    </ul>
+
+    <h3>b) Reminder Data</h3>
+    <p>We collect the content you enter as reminders, including:</p>
+    <ul>
+      <li>Reminder title and description</li>
+      <li>Scheduled date and time</li>
+      <li>Priority level</li>
+      <li>Optional links or location references</li>
+      <li>Snooze and completion status</li>
+    </ul>
+
+    <h3>c) Configuration Data</h3>
+    <p>We store user preferences such as:</p>
+    <ul>
+      <li>Timezone</li>
+      <li>Notification delivery preferences</li>
+      <li>Email address (if you configure email notifications)</li>
+    </ul>
+
+    <h3>d) Device and Usage Information</h3>
+    <p>We do not collect analytics, advertising identifiers, or behavioral tracking data. We do not use crash reporting SDKs or third-party analytics frameworks.</p>
+
+    <h2>2. How We Use Your Information</h2>
+    <p>We use your information solely to:</p>
+    <ul>
+      <li>Authenticate your account and protect it from unauthorized access</li>
+      <li>Store, retrieve, and deliver your reminders</li>
+      <li>Send reminder notifications via your configured channels (in-app, email)</li>
+      <li>Parse natural language reminder input using AI (see Section 5)</li>
+      <li>Apply your timezone and scheduling preferences</li>
+    </ul>
+    <p>We do not use your data for advertising, profiling, or sale to third parties.</p>
+
+    <h2>3. Data Storage and Retention</h2>
+
+    <h3>a) Server Storage</h3>
+    <p>Reminder and account data is stored on our server. Data may be encrypted at rest using cryptographic methods tied to your account credentials. If encryption is enabled, loss of your password may result in permanent, unrecoverable loss of your data — we cannot decrypt it on your behalf.</p>
+
+    <h3>b) Local Storage</h3>
+    <p>The Android app maintains a local database (Room) on your device for offline access. This data remains on your device and is subject to your device's own security settings.</p>
+
+    <h3>c) Retention</h3>
+    <p>Your data is retained for as long as your account remains active. If you wish to have your data deleted, contact us. We will process deletion requests within a reasonable timeframe.</p>
+
+    <h2>4. Notifications and Communication</h2>
+    <p>If you configure email notifications, we use your email address exclusively to deliver reminder alerts. We do not send marketing emails, newsletters, or promotional content.</p>
+    <p>Reminder delivery relies on your device OS, notification permissions, and network availability. We cannot guarantee delivery of every reminder.</p>
+
+    <h2>5. AI-Powered Features</h2>
+    <p>When you use the natural language reminder input feature, the text you enter is transmitted to the OpenAI API for processing. OpenAI parses your input to extract structured reminder fields (title, date, time, location).</p>
+    <ul>
+      <li>Only the reminder input text you explicitly submit for AI parsing is sent to OpenAI.</li>
+      <li>OpenAI's data handling is governed by their own Privacy Policy (openai.com/privacy).</li>
+      <li>We do not send your account credentials, email address, or other personal data to OpenAI.</li>
+      <li>AI parsing is optional. You may create reminders manually without using this feature.</li>
+    </ul>
+
+    <h2>6. Data Sharing and Disclosure</h2>
+    <p>We do not sell, rent, or share your personal information with third parties except:</p>
+    <ul>
+      <li>OpenAI: reminder input text sent for AI parsing (see Section 5)</li>
+      <li>Cloud infrastructure providers: server hosting required to operate the service</li>
+      <li>Legal obligations: if required by law, court order, or to protect the rights and safety of users</li>
+    </ul>
+
+    <h2>7. Security</h2>
+    <p>We implement the following security measures:</p>
+    <ul>
+      <li>Passwords are never stored in plaintext — only salted SHA-256 hashes</li>
+      <li>Authentication tokens are hashed before storage</li>
+      <li>Token rotation: only the most recent tokens are retained per user</li>
+      <li>Optional encrypted data storage using cryptographic keys derived from your credentials</li>
+      <li>HTTPS/TLS encryption for all data in transit</li>
+    </ul>
+    <p>No system is 100% secure. You are responsible for keeping your credentials confidential.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>The App is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that a child under 13 has provided us with personal information, we will delete it promptly.</p>
+
+    <h2>9. Geographic Restrictions</h2>
+    <p>This app is not intended for use by individuals located in the European Union (EU) or European Economic Area (EEA). We do not offer the App to EU/EEA residents and do not accept signups from those regions. If you are located in the EU/EEA, please do not use this App.</p>
+
+    <h2>10. Your Rights</h2>
+    <p>You may:</p>
+    <ul>
+      <li>Access the reminder and account data stored for your account by using the App</li>
+      <li>Delete individual reminders directly within the App</li>
+      <li>Delete your account and all associated data via the App's account settings</li>
+      <li>Stop using the App at any time</li>
+    </ul>
+
+    <h2>11. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. The "Last Updated" date at the top of this page reflects the most recent revision. Continued use of the App after changes constitutes your acceptance of the updated policy.</p>
+  </div>
+</body>
+</html>
