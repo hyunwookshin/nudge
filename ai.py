@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import os
 from datetime import datetime, timezone, timedelta
 import json
@@ -30,7 +30,7 @@ def parse_reminder_from_text(free_text: str, cfg) -> dict:
     Returns dict with keys: Title, Description, Date (yyyy-mm-dd), Time (HH:MM:SS), Link (optional/empty)
     in the *local timezone* defined by cfg (timezone name or offset).
     """
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     local_now = get_local_now_string(cfg)
     tz_hint = cfg.getTimeZone() if cfg.getTimeZone() else f"UTC offset {cfg.getTimeZoneOffset()} hours"
@@ -53,29 +53,28 @@ Rules:
   set Date to 2026-01-01 and Time to 00:00:00.
 """
 
-    schema = genai.protos.Schema(
-        type=genai.protos.Type.OBJECT,
-        properties={
-            "Title":       genai.protos.Schema(type=genai.protos.Type.STRING),
-            "Description": genai.protos.Schema(type=genai.protos.Type.STRING),
-            "Date":        genai.protos.Schema(type=genai.protos.Type.STRING),
-            "Time":        genai.protos.Schema(type=genai.protos.Type.STRING),
-            "Link":        genai.protos.Schema(type=genai.protos.Type.STRING),
-            "Location":    genai.protos.Schema(type=genai.protos.Type.STRING),
+    schema = {
+        "type": "object",
+        "properties": {
+        "Title": {"type": "string"},
+        "Description": {"type": "string"},
+        "Date": {"type": "string"},
+        "Time": {"type": "string"},
+        "Link": {"type": "string"},
+        "Location": {"type": "string"}
         },
-        required=["Title", "Description", "Date", "Time", "Link", "Location"],
-    )
+        "required": ["Title", "Description", "Date", "Time", "Link", "Location"]
+   }
 
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash-preview-04-17",
-        system_instruction=system_instructions,
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            response_schema=schema,
-        ),
-    )
-
-    response = model.generate_content(free_text)
+    response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                    contents=free_text,
+                    config={
+                       "system_instruction": system_instructions,
+                       "response_mime_type": "application/json",
+                       "response_schema": schema,
+                    },
+                   )
     data = json.loads(response.text)
 
     if "Location" in data and data["Location"]:

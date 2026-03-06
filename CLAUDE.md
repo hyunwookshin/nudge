@@ -38,7 +38,7 @@ nudge/
 
 ### Key Files
 - `server.py` — All REST routes: `/login`, `/reminders`, `/add_reminder`, `/add_reminder_ai`, etc.
-- `ai.py` — Calls Gemini (gemini-2.5-flash) with structured output to parse free text into reminder fields (title, date, time, location)
+- `ai.py` — Calls Gemini (gemini-3-flash) with structured output to parse free text into reminder fields (title, date, time, location)
 - `auth/` — `@auth.require_user` decorator for protected routes; salted SHA256 password hashing; rotating token sessions (last 5 tokens kept per user)
 - `data/` — Abstract `DataSource` class; `YamlDataSource` persists to YAML files in `NUDGE_STORE_PATH`
 - `models/` — `Reminder` (title, description, time, priority, link, etc.), `Config` (email, timezone)
