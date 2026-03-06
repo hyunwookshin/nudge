@@ -41,7 +41,7 @@ pip3 install pytz
 pip3 install flask
 pip3 install waitress
 pip3 install autocorrect
-pip3 install google-generativeai
+pip3 install google-genai
 pip3 install bcrypt
 ```
 
