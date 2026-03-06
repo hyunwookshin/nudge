@@ -38,7 +38,7 @@ nudge/
 
 ### Key Files
 - `server.py` — All REST routes: `/login`, `/reminders`, `/add_reminder`, `/add_reminder_ai`, etc.
-- `ai.py` — Calls OpenAI with structured output to parse free text into reminder fields (title, date, time, location)
+- `ai.py` — Calls Gemini (gemini-2.5-flash) with structured output to parse free text into reminder fields (title, date, time, location)
 - `auth/` — `@auth.require_user` decorator for protected routes; salted SHA256 password hashing; rotating token sessions (last 5 tokens kept per user)
 - `data/` — Abstract `DataSource` class; `YamlDataSource` persists to YAML files in `NUDGE_STORE_PATH`
 - `models/` — `Reminder` (title, description, time, priority, link, etc.), `Config` (email, timezone)
@@ -47,7 +47,7 @@ nudge/
 - `spell/` — Autocorrects typos while preserving capitalization
 
 ### Environment Variables
-- `OPENAI_API_KEY` — Required for AI reminder creation
+- `GEMINI_API_KEY` — Required for AI reminder creation
 - `NUDGE_STORE_PATH` — Directory for YAML data files
 - `NUDGE_SECURE_KEY_PATH` — Optional path for encrypted data store key
 
@@ -137,7 +137,7 @@ Key fields: `title`, `description`, `time` (datetime), `priority`, `link`, `clos
 - **Add a new API endpoint:** edit `server.py`, protect with `@auth.require_user` if needed
 - **Change reminder fields:** update `models/`, propagate to `data/`, Android UI, and API
 - **Change notification behavior:** edit `actions/`
-- **Modify AI parsing:** edit `ai.py` (uses OpenAI structured outputs)
+- **Modify AI parsing:** edit `ai.py` (uses Gemini structured outputs)
 
 ---
 

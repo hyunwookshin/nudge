@@ -1,5 +1,6 @@
-from openai import OpenAI
-from datetime import datetime, timezone
+import google.generativeai as genai
+import os
+from datetime import datetime, timezone, timedelta
 import json
 import pytz
 from urllib.parse import quote_plus
@@ -24,32 +25,15 @@ def get_local_now_string(cfg) -> str:
         local_now = utc_now.astimezone(timezone(offset))
         return local_now.strftime("%Y-%m-%d %H:%M:%S UTC%z")
 
-def parse_reminder_from_text_openai(free_text: str, cfg) -> dict:
+def parse_reminder_from_text(free_text: str, cfg) -> dict:
     """
     Returns dict with keys: Title, Description, Date (yyyy-mm-dd), Time (HH:MM:SS), Link (optional/empty)
     in the *local timezone* defined by cfg (timezone name or offset).
     """
-    client = OpenAI()
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
     local_now = get_local_now_string(cfg)
     tz_hint = cfg.getTimeZone() if cfg.getTimeZone() else f"UTC offset {cfg.getTimeZoneOffset()} hours"
-
-    schema = {
-        "name": "reminder_fields",
-        "schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                "Title": {"type": "string"},
-                "Description": {"type": "string"},
-                "Date": {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}$"},
-                "Time": {"type": "string", "pattern": r"^\d{2}:\d{2}:\d{2}$"},
-                "Link": {"type": "string"},
-                "Location": {"type": "string"}
-            },
-            "required": ["Title", "Description", "Date", "Time", "Link", "Location"]
-        }
-    }
 
     system_instructions = f"""
 You convert a user's free text into reminder fields.
@@ -64,42 +48,39 @@ Rules:
 - If the user doesn't provide a link, set Link to "".
 - Infer a concise Title and a helpful Description.
 - If the text is ambiguous, make the best reasonable assumption (do not ask questions).
-- Location is optional, and likely not provided
-- Last but not least if the event is inappropriate, make Title/Description empty, and
+- Location is optional, and likely not provided.
+- If the event is inappropriate, make Title/Description empty, and
   set Date to 2026-01-01 and Time to 00:00:00.
 """
 
-    # Responses API w/ Structured Outputs (JSON schema) :contentReference[oaicite:3]{index=3}
-    resp = client.responses.create(
-        model="gpt-4.1-mini",
-        input=[
-            {"role": "system", "content": system_instructions},
-            {"role": "user", "content": free_text},
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "reminder_fields",   # ✅ REQUIRED
-                "schema": schema["schema"], # ✅ pass ONLY the inner schema
-            }
+    schema = genai.protos.Schema(
+        type=genai.protos.Type.OBJECT,
+        properties={
+            "Title":       genai.protos.Schema(type=genai.protos.Type.STRING),
+            "Description": genai.protos.Schema(type=genai.protos.Type.STRING),
+            "Date":        genai.protos.Schema(type=genai.protos.Type.STRING),
+            "Time":        genai.protos.Schema(type=genai.protos.Type.STRING),
+            "Link":        genai.protos.Schema(type=genai.protos.Type.STRING),
+            "Location":    genai.protos.Schema(type=genai.protos.Type.STRING),
         },
+        required=["Title", "Description", "Date", "Time", "Link", "Location"],
     )
 
-    # The SDK returns the final text output as JSON text; parse it
-    # (This shape can vary slightly across SDK versions; handle both common cases.)
-    out_text = None
-    if hasattr(resp, "output_text") and resp.output_text:
-        out_text = resp.output_text
-    else:
-        # fallback: dig into output array
-        out_text = resp.output[0].content[0].text
+    model = genai.GenerativeModel(
+        model_name="gemini-2.5-flash-preview-04-17",
+        system_instruction=system_instructions,
+        generation_config=genai.GenerationConfig(
+            response_mime_type="application/json",
+            response_schema=schema,
+        ),
+    )
 
-    data = json.loads(out_text)
+    response = model.generate_content(free_text)
+    data = json.loads(response.text)
 
-    if "Location" in data and data["Location"] is not None:
+    if "Location" in data and data["Location"]:
         data["Link"] = maps_link_from_location(data["Location"])
 
-    # Guarantee Link exists
     if "Link" not in data or data["Link"] is None:
         data["Link"] = ""
 

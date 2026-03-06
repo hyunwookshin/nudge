@@ -251,8 +251,8 @@ def add_reminder_ai():
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
-    # 1) Ask OpenAI to parse free text into structured fields
-    ai_r = ai.parse_reminder_from_text_openai(free_text, cfg)
+    # 1) Ask Gemini to parse free text into structured fields
+    ai_r = ai.parse_reminder_from_text(free_text, cfg)
 
     # 2) Build the same "info" dict shape you already store
     info = {}
