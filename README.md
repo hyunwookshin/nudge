@@ -41,7 +41,7 @@ pip3 install pytz
 pip3 install flask
 pip3 install waitress
 pip3 install autocorrect
-pip3 install openai
+pip3 install google-generativeai
 pip3 install bcrypt
 ```
 
@@ -117,7 +117,7 @@ This requires the following nginx settings:
 And run the server
 
 ```
-OPENAI_API_KEY=. NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=./config.yaml ./server.py
+GEMINI_API_KEY=... NUDGE_STORE_PATH=. NUDGE_SECURE_KEY_PATH=... NUDGE_CONFIG_PATH=./config.yaml ./server.py
 ```
 
 The `NUDGE_SERVER_SECURE_PATH` should be where the secure key is stored.
