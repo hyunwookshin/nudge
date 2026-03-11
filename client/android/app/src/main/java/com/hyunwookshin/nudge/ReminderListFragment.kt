@@ -326,7 +326,7 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
     private fun showDayMenu(date: LocalDate, anchor: View) {
-        if (isLoading || isOffline) return
+        if (isLoading) return
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "+ Add Event")
         popup.setOnMenuItemClickListener { item ->
@@ -565,12 +565,15 @@ class ReminderListFragment : Fragment(), Refreshable {
                 .show()
         }
         // Going offline→online resets the dialog flag so it shows again next time
-        if (wasOffline && !offline) offlineDialogShown = false
+        if (wasOffline && !offline) {
+            offlineDialogShown = false
+            syncPendingReminders()
+        }
         val fmt = DateTimeFormatter.ofPattern("MMMM d, yyyy")
         val base = "Today is " + LocalDate.now().format(fmt)
         todayText.text = if (offline) "$base   •   Offline" else base
-        overflowButton.isEnabled = !offline
-        overflowButton.alpha = if (offline) 0.35f else 1.0f
+        overflowButton.isEnabled = true
+        overflowButton.alpha = 1.0f
         periodPill.isEnabled = !offline
         periodPill.alpha = if (offline) 0.35f else 1.0f
         reminderAdapter.setReadOnly(offline)
@@ -579,12 +582,49 @@ class ReminderListFragment : Fragment(), Refreshable {
 
     private fun updateEmptyState() {
         addReminderButton.visibility =
-            if (currentReminders.isEmpty() && !isOffline) View.VISIBLE else View.GONE
+            if (currentReminders.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun syncPendingReminders() {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            val pending = db.reminderDao().getPending()
+            if (pending.isEmpty()) return@launch
+
+            val apiService = ApiClient.getClient().create(ApiService::class.java)
+            var anySynced = false
+            for (entity in pending) {
+                val cleanDesc = entity.description.removePrefix("(Not Backed Up) ")
+                val reminder = entity.toDomain().copy(
+                    Description = cleanDesc,
+                    Key = entity.pendingKey
+                )
+                try {
+                    val response = apiService.addReminder(reminder).execute()
+                    if (response.isSuccessful) {
+                        db.reminderDao().deleteById(entity.id)
+                        anySynced = true
+                    }
+                } catch (e: Exception) {
+                    // Leave pending for next online session
+                }
+            }
+            if (anySynced) {
+                withContext(Dispatchers.Main) {
+                    if (isAdded) fetchReminders()
+                }
+            }
+        }
     }
 
     private fun showOverflowMenu() {
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), overflowButton)
         popup.menuInflater.inflate(R.menu.reminder_overflow_menu, popup.menu)
+
+        if (isOffline) {
+            popup.menu.findItem(R.id.menu_account)?.isEnabled = false
+            popup.menu.findItem(R.id.menu_toggle_mini_calendar)?.isEnabled = false
+            popup.menu.findItem(R.id.menu_logout)?.isEnabled = false
+        }
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {

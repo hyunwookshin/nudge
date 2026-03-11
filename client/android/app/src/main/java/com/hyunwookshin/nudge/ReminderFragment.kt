@@ -25,7 +25,11 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ReminderFragment : Fragment() {
 
@@ -413,9 +417,35 @@ class ReminderFragment : Fragment() {
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
                 endLoading()
-                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+                saveLocally(reminder)
             }
         })
+    }
+
+    private fun saveLocally(reminder: Reminder) {
+        val pendingId = "pending_${System.currentTimeMillis()}"
+        val dateTime = "${reminder.Date} ${reminder.Time.take(5)}"
+        val entity = ReminderEntity(
+            id = pendingId,
+            title = reminder.Title,
+            description = "(Not Backed Up) ${reminder.Description}",
+            date = reminder.Date,
+            time = dateTime,
+            link = reminder.Link,
+            priority = reminder.Priority,
+            snooze = reminder.Snooze,
+            read = "",
+            isPending = true,
+            pendingKey = reminder.Key,
+        )
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            AppDb.get(requireContext()).reminderDao().upsert(entity)
+            withContext(Dispatchers.Main) {
+                if (!isAdded) return@withContext
+                Snackbar.make(requireView(), "Saved locally — will sync when online", Snackbar.LENGTH_LONG).show()
+                callback?.onReminderUpdated()
+            }
+        }
     }
 
     override fun onDetach() {

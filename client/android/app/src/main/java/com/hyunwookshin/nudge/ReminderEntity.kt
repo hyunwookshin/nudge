@@ -14,6 +14,8 @@ data class ReminderEntity(
     val priority: Int,
     val snooze: Int,
     val read: String,
+    val isPending: Boolean = false,
+    val pendingKey: String = "",
 )
 
 // Entity -> Domain
@@ -40,5 +42,7 @@ fun Reminder.toEntity(): ReminderEntity = ReminderEntity(
     link = Link,
     priority = Priority,
     snooze = Snooze,
-    read = Read
+    read = Read,
+    isPending = false,
+    pendingKey = "",
 )
