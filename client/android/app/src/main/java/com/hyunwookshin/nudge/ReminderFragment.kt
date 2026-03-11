@@ -228,6 +228,7 @@ class ReminderFragment : Fragment() {
         val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
         if (isOffline) {
             aiBox.visibility = View.GONE
+            topLoading.visibility = View.GONE
         }
 
         val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
@@ -322,7 +323,8 @@ class ReminderFragment : Fragment() {
 
     private fun beginLoading() {
         inFlightCount++
-        if (inFlightCount == 1) {
+        val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
+        if (inFlightCount == 1 && !isOffline) {
             topLoading.visibility = View.VISIBLE
             topLoading.isIndeterminate = true
         }
