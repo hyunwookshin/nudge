@@ -441,12 +441,11 @@ class ReminderFragment : Fragment() {
     private fun saveLocally(reminder: Reminder) {
         // For edits, keep the original ID so the server upserts correctly on sync
         val pendingId = if (reminder.Id.isNotBlank()) reminder.Id else "pending_${System.currentTimeMillis()}"
-        val cleanDesc = reminder.Description.removePrefix("(Not Backed Up) ")
         val dateTime = "${reminder.Date} ${reminder.Time}"  // "yyyy-MM-dd HH:mm:ss"
         val entity = ReminderEntity(
             id = pendingId,
             title = reminder.Title,
-            description = "(Not Backed Up) $cleanDesc",
+            description = reminder.Description,  // stored clean; badge shown in UI via isPending
             date = reminder.Date,
             time = dateTime,
             link = reminder.Link,

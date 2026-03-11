@@ -8,7 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -97,6 +99,18 @@ class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginC
     }
 
     override fun onDeleteReminder(reminder: Reminder) {
+        if (reminder.isPending) {
+            // Pending reminders only exist in the local DB — the server has never seen them,
+            // so there's nothing to DELETE on the server. Just remove from Room directly.
+            lifecycleScope.launch(Dispatchers.IO) {
+                AppDb.get(this@MainActivity).reminderDao().deleteById(reminder.Id)
+                withContext(Dispatchers.Main) {
+                    ReminderScheduler.cancelReminder(this@MainActivity, reminder.Id)
+                    refreshFragment()
+                }
+            }
+            return
+        }
         val apiService = ApiClient.getClient().create(ApiService::class.java)
         val call = apiService.deleteReminder(reminder)
         call.enqueue(object : Callback<Void> {

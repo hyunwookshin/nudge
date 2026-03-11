@@ -106,6 +106,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     inner class ReminderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val cardRoot: View = itemView.findViewById(R.id.cardRoot)
         private val title: TextView = itemView.findViewById(R.id.title)
+        private val pendingBadge: TextView = itemView.findViewById(R.id.pendingBadge)
         private val description: TextView = itemView.findViewById(R.id.description)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val read: TextView = itemView.findViewById(R.id.read)
@@ -118,6 +119,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
         fun bind(reminder: Reminder, readOnly: Boolean) {
             title.text = reminder.Title
+            pendingBadge.visibility = if (reminder.isPending) View.VISIBLE else View.GONE
             description.text = reminder.Description
             time.text = convert24HourTo12Hour(reminder.Time)
             val d = daysUntil(reminder.Time)

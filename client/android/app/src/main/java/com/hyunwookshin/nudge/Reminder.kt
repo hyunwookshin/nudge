@@ -15,6 +15,9 @@ data class Reminder(
     val Snooze: Int = 0,
     val Read: String = "",
     val Repeat: Int = 0,
+    // Local-only flag — not stored on the server. True for reminders created/edited while
+    // offline that haven't been synced yet. Used by the adapter to show the "Not Backed Up" badge.
+    val isPending: Boolean = false,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
@@ -27,7 +30,8 @@ data class Reminder(
         parcel.readString() ?: "",
         parcel.readInt(),
         parcel.readString() ?: "",
-        parcel.readInt()
+        parcel.readInt(),
+        parcel.readByte() != 0.toByte(),
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -42,6 +46,7 @@ data class Reminder(
         parcel.writeInt(Snooze)
         parcel.writeString(Read)
         parcel.writeInt(Repeat)
+        parcel.writeByte(if (isPending) 1 else 0)
     }
 
     override fun describeContents(): Int {

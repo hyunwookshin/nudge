@@ -29,7 +29,8 @@ fun ReminderEntity.toDomain(): Reminder = Reminder(
     Priority = priority,
     Key = "",
     Snooze = snooze,
-    Read = read
+    Read = read,
+    isPending = isPending,
 )
 
 // Domain -> Entity

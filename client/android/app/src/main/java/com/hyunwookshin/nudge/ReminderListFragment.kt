@@ -272,35 +272,41 @@ class ReminderListFragment : Fragment(), Refreshable {
                 if (!isAdded || view == null) return
                 progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
-                    val reminders = (response.body()?.reminders ?: emptyList())
+                    val serverReminders = (response.body()?.reminders ?: emptyList())
                         .sortedBy { it.Time }
-                    Log.d("ReminderListFragment", "Reminders fetched: ${reminders.size}")
-                    showOffline(false)
-                    currentReminders = reminders
-                    reminderAdapter.setReminders(reminders)
-                    updateEmptyState()
-                    // Always reset calendar to today on refresh
-                    miniCalAnchor = LocalDate.now()
-                    miniCalendarAdapter.submit(buildMiniCalendarDays(reminders, miniCalAnchor))
-                    updateMiniCalendarMonth(miniCalAnchor)
-                    // Scroll to first reminder on/after today, or top if none
-                    val idx = findFirstReminderIndexOnOrAfter(miniCalAnchor)
-                    recyclerView.post {
-                        val offsetPx =
-                            (recyclerView.resources.displayMetrics.density).toInt() // 32dp
-                        if (idx >= 0) {
-                            recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
-                        } else {
-                            recyclerView.scrollToPosition(0)
+                    Log.d("ReminderListFragment", "Reminders fetched: ${serverReminders.size}")
+                    showOffline(false) // may trigger syncPendingReminders if  online
+
+                    // Write server data to cache (replaceAll preserves isPending=1 rows),
+                    // then read everything back so pending entries remain visible until
+                    // syncPendingReminders successfully uploads and removes them.
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                        db.reminderDao().replaceAll(serverReminders.map { it.toEntity() })
+                        val allVisible = db.reminderDao().getAll()
+                            .map { it.toDomain() }
+                            .sortedBy { it.Time }
+                        withContext(Dispatchers.Main) {
+                            if (!isAdded || view == null) return@withContext
+                            currentReminders = allVisible
+                            reminderAdapter.setReminders(allVisible)
+                            updateEmptyState()
+                            miniCalAnchor = LocalDate.now()
+                            miniCalendarAdapter.submit(buildMiniCalendarDays(allVisible, miniCalAnchor))
+                            updateMiniCalendarMonth(miniCalAnchor)
+                            val idx = findFirstReminderIndexOnOrAfter(miniCalAnchor)
+                            recyclerView.post {
+                                val offsetPx =
+                                    (recyclerView.resources.displayMetrics.density).toInt()
+                                if (idx >= 0) {
+                                    recyclerView.smoothScrollToPositionWithOffset(idx, offsetPx)
+                                } else {
+                                    recyclerView.scrollToPosition(0)
+                                }
+                            }
                         }
                     }
-                    // cache to DB
-                    // Save to DB
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                        db.reminderDao().replaceAll(reminders.map { it.toEntity() })
-                    }
-                    // Schedule reminders
-                    ReminderScheduler.scheduleAll(requireContext(), reminders)
+                    // Schedule alarms for server reminders only (pending have no server ID yet).
+                    ReminderScheduler.scheduleAll(requireContext(), serverReminders)
 
                 } else {
                     showOffline(true)
@@ -618,8 +624,8 @@ class ReminderListFragment : Fragment(), Refreshable {
                 .setPositiveButton("Got it", null)
                 .show()
         }
-        // Detect offline→online transition: reset dialog flag and sync any locally-saved reminders.
-        if (wasOffline && !offline) {
+        // reset dialog flag and sync any locally-saved reminders.
+        if (!offline) {
             offlineDialogShown = false
             syncPendingReminders()
         }
@@ -654,28 +660,41 @@ class ReminderListFragment : Fragment(), Refreshable {
             if (pending.isEmpty()) return@launch
 
             val apiService = ApiClient.getClient().create(ApiService::class.java)
-            var anySynced = false
+            val syncedIds = mutableSetOf<String>()
             for (entity in pending) {
-                // Strip the "(Not Backed Up) " prefix before sending to the server.
-                val cleanDesc = entity.description.removePrefix("(Not Backed Up) ")
+                Log.d("ReminderListFragment", "Adding pending");
                 val reminder = entity.toDomain().copy(
-                    Description = cleanDesc,
-                    Key = entity.pendingKey
+                    Description = entity.description,
+                    Key = entity.pendingKey,
+                    // entity.time is the full "yyyy-MM-dd HH:mm:ss" datetime used for display;
+                    // the server /add_reminder endpoint expects Date and Time as separate fields
+                    // and concatenates them, so Time must be just "HH:mm:ss".
+                    Time = entity.time.drop(11)
                 )
                 try {
                     // execute() is synchronous — required here because we're already on IO.
                     val response = apiService.addReminder(reminder).execute()
                     if (response.isSuccessful) {
                         db.reminderDao().deleteById(entity.id)
-                        anySynced = true
+                        syncedIds.add(entity.id)
                     }
                 } catch (e: Exception) {
                     // Leave pending for next online session
+                    Log.d("ReminderListFragment", "Could not list reminders");
                 }
             }
-            if (anySynced) {
+            if (syncedIds.isNotEmpty()) {
                 withContext(Dispatchers.Main) {
-                    if (isAdded) fetchReminders()
+                    if (!isAdded) return@withContext
+                    // Flip isPending to false for successfully synced reminders so the
+                    // "Not Backed Up" badge disappears immediately without waiting for a
+                    // network refresh (which could fail or race with stale IO coroutines).
+                    currentReminders = currentReminders.map { r ->
+                        if (r.Id in syncedIds) r.copy(isPending = false) else r
+                    }
+                    reminderAdapter.setReminders(currentReminders)
+                    // Background refresh to pick up server-assigned IDs for new reminders.
+                    fetchReminders()
                 }
             }
         }
