@@ -49,8 +49,8 @@ class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginC
     override fun onShowReminders() {
         replaceFragment(ReminderListFragment())
     }
-    override fun onEditReminder(reminder: Reminder) {
-        val reminderFragment = ReminderFragment.newInstance(reminder)
+    override fun onEditReminder(reminder: Reminder, isOffline: Boolean) {
+        val reminderFragment = ReminderFragment.newInstance(reminder, isOffline)
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, reminderFragment)
             .addToBackStack(null)

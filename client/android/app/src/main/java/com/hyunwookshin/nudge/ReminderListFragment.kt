@@ -576,7 +576,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         overflowButton.alpha = 1.0f
         periodPill.isEnabled = !offline
         periodPill.alpha = if (offline) 0.35f else 1.0f
-        reminderAdapter.setReadOnly(offline)
+        reminderAdapter.setOfflineMode(offline)
         updateEmptyState()
     }
 

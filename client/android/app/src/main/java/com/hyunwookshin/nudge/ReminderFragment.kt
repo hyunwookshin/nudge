@@ -83,11 +83,12 @@ class ReminderFragment : Fragment() {
         private const val ARG_PREFILL_DATE = "prefill_date"
         private const val ARG_IS_OFFLINE = "is_offline"
 
-        fun newInstance(reminder: Reminder): ReminderFragment {
+        fun newInstance(reminder: Reminder, isOffline: Boolean = false): ReminderFragment {
             val fragment = ReminderFragment()
-            val args = Bundle()
-            args.putParcelable(ARG_REMINDER, reminder)
-            fragment.arguments = args
+            fragment.arguments = Bundle().apply {
+                putParcelable(ARG_REMINDER, reminder)
+                putBoolean(ARG_IS_OFFLINE, isOffline)
+            }
             return fragment
         }
 
@@ -438,12 +439,14 @@ class ReminderFragment : Fragment() {
     }
 
     private fun saveLocally(reminder: Reminder) {
-        val pendingId = "pending_${System.currentTimeMillis()}"
+        // For edits, keep the original ID so the server upserts correctly on sync
+        val pendingId = if (reminder.Id.isNotBlank()) reminder.Id else "pending_${System.currentTimeMillis()}"
+        val cleanDesc = reminder.Description.removePrefix("(Not Backed Up) ")
         val dateTime = "${reminder.Date} ${reminder.Time}"  // "yyyy-MM-dd HH:mm:ss"
         val entity = ReminderEntity(
             id = pendingId,
             title = reminder.Title,
-            description = "(Not Backed Up) ${reminder.Description}",
+            description = "(Not Backed Up) $cleanDesc",
             date = reminder.Date,
             time = dateTime,
             link = reminder.Link,

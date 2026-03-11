@@ -30,11 +30,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         onReminderClick = listener
     }
 
-    //offline mode
     private var readOnly = false
+    private var isOfflineMode = false
 
     fun setReadOnly(readOnly: Boolean) {
         this.readOnly = readOnly
+        notifyDataSetChanged()
+    }
+
+    fun setOfflineMode(offline: Boolean) {
+        this.isOfflineMode = offline
+        this.readOnly = false
         notifyDataSetChanged()
     }
 
@@ -144,13 +150,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 editButton.visibility = View.GONE
                 copyButton.visibility = View.GONE
                 deleteButton.visibility = View.GONE
+            } else if (isOfflineMode) {
+                editButton.visibility = if (isVirtual) View.GONE else View.VISIBLE
+                copyButton.visibility = View.GONE
+                deleteButton.visibility = View.GONE
             } else {
                 editButton.visibility = if (isVirtual) View.GONE else View.VISIBLE
                 copyButton.visibility = View.VISIBLE
                 deleteButton.visibility = View.VISIBLE
             }
             editButton.setOnClickListener {
-                reminderCallback?.onEditReminder(reminder)
+                reminderCallback?.onEditReminder(reminder, isOfflineMode)
             }
             copyButton.setOnClickListener {
                 reminderCallback?.onCopyReminder(reminder)
