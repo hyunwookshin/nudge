@@ -81,6 +81,7 @@ class ReminderFragment : Fragment() {
     companion object {
         private const val ARG_REMINDER = "reminder"
         private const val ARG_PREFILL_DATE = "prefill_date"
+        private const val ARG_IS_OFFLINE = "is_offline"
 
         fun newInstance(reminder: Reminder): ReminderFragment {
             val fragment = ReminderFragment()
@@ -90,17 +91,19 @@ class ReminderFragment : Fragment() {
             return fragment
         }
 
-        fun newInstance(): ReminderFragment {
+        fun newInstance(isOffline: Boolean = false): ReminderFragment {
             val fragment = ReminderFragment()
-            val args = Bundle()
-            fragment.arguments = args
+            fragment.arguments = Bundle().apply {
+                putBoolean(ARG_IS_OFFLINE, isOffline)
+            }
             return fragment
         }
 
-        fun newInstanceForDate(date: String): ReminderFragment {
+        fun newInstanceForDate(date: String, isOffline: Boolean = false): ReminderFragment {
             val fragment = ReminderFragment()
             fragment.arguments = Bundle().apply {
-                putString(ARG_PREFILL_DATE, date) // yyyy-MM-dd
+                putString(ARG_PREFILL_DATE, date)
+                putBoolean(ARG_IS_OFFLINE, isOffline)
             }
             return fragment
         }
@@ -221,6 +224,11 @@ class ReminderFragment : Fragment() {
             false
         }
         passwordEditText.setText(ApiKey.key)
+
+        val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
+        if (isOffline) {
+            aiBox.visibility = View.GONE
+        }
 
         val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
         // Prepopulation when user long-pressed date on mini calendar
@@ -380,7 +388,12 @@ class ReminderFragment : Fragment() {
         val time = selectedTime!!            // HH:mm:00
 
         val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read, repeat)
-        sendReminder(reminder)
+        val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
+        if (isOffline) {
+            saveLocally(reminder)
+        } else {
+            sendReminder(reminder)
+        }
 
         // Clear all text fields except password
         titleEditText.text.clear()
@@ -417,7 +430,7 @@ class ReminderFragment : Fragment() {
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
                 endLoading()
-                saveLocally(reminder)
+                Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
             }
         })
     }

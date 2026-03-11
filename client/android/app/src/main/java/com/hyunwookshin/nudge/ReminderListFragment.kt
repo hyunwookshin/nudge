@@ -166,7 +166,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         swipeRefresh.setOnRefreshListener { fetchReminders() }
         addReminderButton = view.findViewById(R.id.addReminderButton)
         addReminderButton.setOnClickListener {
-            val fragment = ReminderFragment.newInstance()
+            val fragment = ReminderFragment.newInstance(isOffline)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
@@ -332,7 +332,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         popup.setOnMenuItemClickListener { item ->
             if (item.itemId == 1) {
                 // Navigate to ReminderFragment with date prefilled
-                val fragment = ReminderFragment.newInstanceForDate(date.format(argDateFmt))
+                val fragment = ReminderFragment.newInstanceForDate(date.format(argDateFmt), isOffline)
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
@@ -629,7 +629,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_add_event -> {
-                    val fragment = ReminderFragment.newInstance()
+                    val fragment = ReminderFragment.newInstance(isOffline)
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, fragment)
                         .addToBackStack(null)
