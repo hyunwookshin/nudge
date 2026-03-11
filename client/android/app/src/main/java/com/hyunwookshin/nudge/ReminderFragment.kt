@@ -437,7 +437,7 @@ class ReminderFragment : Fragment() {
 
     private fun saveLocally(reminder: Reminder) {
         val pendingId = "pending_${System.currentTimeMillis()}"
-        val dateTime = "${reminder.Date} ${reminder.Time.take(5)}"
+        val dateTime = "${reminder.Date} ${reminder.Time}"  // "yyyy-MM-dd HH:mm:ss"
         val entity = ReminderEntity(
             id = pendingId,
             title = reminder.Title,

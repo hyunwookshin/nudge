@@ -40,9 +40,11 @@ object ReminderScheduler {
         val reminderDateTime = parseReminderDateTime(reminder)
         val now = LocalDateTime.now()
 
+        if (reminderDateTime == null) return
+
         OFFSETS.forEachIndexed { index, offset ->
 
-            val triggerTime = reminderDateTime!!.minus(offset)
+            val triggerTime = reminderDateTime.minus(offset)
 
             val signature = computeSignature(reminder)
 
