@@ -141,6 +141,35 @@ Key fields: `title`, `description`, `time` (datetime), `priority`, `link`, `clos
 
 ---
 
+## Android Critical User Journeys (CUJs)
+
+These must remain working after any change. Verify manually or via tests.
+
+### Online Mode
+- **CUJ-O1 View list** — App opens, reminders load from network, shimmer shows then disappears, list appears sorted by time
+- **CUJ-O2 Create reminder (manual)** — Hamburger → Add Event or empty-state button → fill form → save → list refreshes with new reminder
+- **CUJ-O3 Create reminder (AI)** — Type natural language in AI box → parse → pre-fill fields → save → list refreshes
+- **CUJ-O4 Edit reminder** — Tap edit on a card → change fields → save → list refreshes with update
+- **CUJ-O5 Copy reminder** — Tap copy on a card → opens form pre-filled with same data, empty ID → save creates new entry
+- **CUJ-O6 Delete reminder** — Tap delete → confirm dialog → reminder removed from list
+- **CUJ-O7 Swipe to refresh** — Pull down → spinner shows → fresh data fetched
+
+### Offline Mode
+- **CUJ-F1 Enter offline** — Network fails → "You're Offline" dialog shown once → list shows cached data → status bar says Offline → copy/delete buttons hidden, edit-only
+- **CUJ-F2 Create reminder offline** — Hamburger → Add Event (only enabled item) → fill form (no AI box) → save → appears in list with "(Not Backed Up)" prefix
+- **CUJ-F3 Edit reminder offline** — Tap edit on existing card → modify → save → appears with "(Not Backed Up)" prefix, original ID preserved
+- **CUJ-F4 Stay offline through navigation** — Navigate to ReminderFragment and back; offline mode must persist, no shimmer on return
+
+### Reconnect
+- **CUJ-R1 Auto-sync on reconnect** — Next swipe-to-refresh or background resume while online → pending reminders POST'd serially to server → "(Not Backed Up)" entries replaced with server copies
+
+### Navigation
+- **CUJ-N1 Abort edit** — Open ReminderFragment, press back without saving → no shimmer, no network call, list unchanged
+- **CUJ-N2 Save and return** — Save a reminder → list refreshes once with updated data
+- **CUJ-N3 Background resume** — Leave app (home/recents), return → fresh fetch triggered
+
+---
+
 ## Building and Installing the Android App (macOS + Android Studio)
 
 ### Prerequisites

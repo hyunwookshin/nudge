@@ -41,9 +41,11 @@ class ReminderListFragment : Fragment(), Refreshable {
     private lateinit var progressBar: ProgressBar
     private var reminderCallback: ReminderCallback? = null
     private lateinit var overflowButton: ImageButton
-    // Manage state
+
     private lateinit var recyclerView: RecyclerView
+    // The last successfully fetched reminders, used by the mini calendar and empty-state checks.
     private var currentReminders: List<Reminder> = emptyList()
+    // Center date for the 4-week mini calendar grid. Resets to today on a successful network fetch.
     private var miniCalAnchor: LocalDate = LocalDate.now()
     private lateinit var miniCalendarMonth: TextView
     private lateinit var miniCalPrev: ImageButton
@@ -61,13 +63,23 @@ class ReminderListFragment : Fragment(), Refreshable {
     // Empty state
     private lateinit var addReminderButton: com.google.android.material.button.MaterialButton
     private lateinit var shimmerLayout: com.facebook.shimmer.ShimmerFrameLayout
+
+    // True when the last network attempt failed (or the server returned an error).
+    // Stays true until a forced refresh (swipe-to-refresh or background resume) succeeds.
+    // While offline: adapter shows edit-only buttons, copy/delete are hidden, AI box is hidden.
     private var isOffline = false
+
+    // True while a network fetch is in flight. Blocks the day long-press menu to prevent
+    // navigation during an incomplete load.
     private var isLoading = false
+
+    // Tracks whether the "You're Offline" dialog has already been shown in the current offline
+    // session. Resets to false when connectivity is restored so it can appear again next time.
     private var offlineDialogShown = false
 
     private lateinit var swipeRefresh: SwipeRefreshLayout
 
-    // DB for caching
+    // Room DB used for offline caching of reminders.
     private lateinit var db: AppDb
 
     override fun onCreateView(
@@ -215,6 +227,11 @@ class ReminderListFragment : Fragment(), Refreshable {
         reminderCallback = null
     }
 
+    /**
+     * Populates the list immediately from the local Room cache so the user sees
+     * stale-but-fast data while the network fetch is in progress.
+     * The shimmer stays running (started by fetchReminders) until the network responds.
+     */
     private fun loadCachedReminders() {
         viewLifecycleOwner.lifecycleScope.launch {
             val cached = withContext(Dispatchers.IO) {
@@ -229,11 +246,17 @@ class ReminderListFragment : Fragment(), Refreshable {
                 miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
                 updateMiniCalendarMonth(miniCalAnchor)
 
+                // Hide the circular progress bar; shimmer continues until network responds.
                 progressBar.visibility = View.GONE
             }
         }
     }
 
+    /**
+     * Fetches reminders from the server for the current [period] and updates the list,
+     * mini calendar, Room cache, and alarm scheduler on success.
+     * On failure (network error or non-2xx response) calls [showOffline] to enter offline mode.
+     */
     private fun fetchReminders() {
         showLoading()
         val apiService = ApiClient.getClient().create(ApiService::class.java)
@@ -244,6 +267,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         }
         call.enqueue(object : Callback<ReminderResponse> {
             override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
+                // Fragment may have been detached while the call was in flight (e.g. user
+                // navigated away). Skip UI updates to avoid IllegalStateException.
                 if (!isAdded || view == null) return
                 progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
@@ -283,6 +308,7 @@ class ReminderListFragment : Fragment(), Refreshable {
             }
 
             override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
+                // Same detach guard as onResponse.
                 if (!isAdded || view == null) return
                 progressBar.visibility = View.GONE
                 showOffline(true)
@@ -343,16 +369,22 @@ class ReminderListFragment : Fragment(), Refreshable {
         popup.show()
     }
 
+    /**
+     * Returns the index of the first reminder whose date is on or after [date],
+     * or -1 if none exists. Assumes [currentReminders] is sorted ascending by time.
+     */
     private fun findFirstReminderIndexOnOrAfter(date: LocalDate): Int {
         for (i in currentReminders.indices) {
             val d = reminderLocalDate(currentReminders[i]) ?: continue
-            if (!d.isBefore(date)) { // d >= date
-                return i
-            }
+            if (!d.isBefore(date)) return i  // d >= date
         }
         return -1
     }
 
+    /**
+     * Parses the date portion of a reminder's Time field ("yyyy-MM-dd HH:mm:ss") into a
+     * [LocalDate]. Returns null if the field is malformed.
+     */
     private fun reminderLocalDate(r: Reminder): LocalDate? {
         return runCatching {
             LocalDate.parse(r.Time.take(10)) // yyyy-MM-dd
@@ -391,11 +423,20 @@ class ReminderListFragment : Fragment(), Refreshable {
         }
     }
 
+    /**
+     * Animates the mini calendar grid out (slide + fade), calls [update] to swap data,
+     * then animates it back in from the opposite side.
+     *
+     * [dx]/[dy] control the slide direction: positive dx slides right-out/left-in (previous
+     * month), negative dx slides left-out/right-in (next month). Vertical works similarly.
+     * Falls back to an instant [update] if the RecyclerView hasn't been initialized yet.
+     */
     private fun animateMiniCalendar(
         dx: Float,
         dy: Float,
         update: () -> Unit
     ) {
+        // Guard against being called before onViewCreated wires up the view.
         if (!::miniCalendarRv.isInitialized) {
             update()
             return
@@ -433,22 +474,29 @@ class ReminderListFragment : Fragment(), Refreshable {
     }
 
 
+    /**
+     * Builds the list of [DayState] objects for a 4-week mini calendar centered on [anchor].
+     *
+     * Layout (Sunday-first, 7 columns × 4 rows = 28 cells):
+     *   Row 0 — week before anchor week
+     *   Row 1 — anchor week          ← anchor day falls here
+     *   Row 2 — week after anchor
+     *   Row 3 — following week
+     *
+     * Each day is annotated with how many reminders fall on it and whether any are
+     * high-priority (priority ≤ 1) or low-priority, for dot rendering in the cell.
+     */
     private fun buildMiniCalendarDays(
         reminders: List<Reminder>,
         anchor: LocalDate
     ): List<DayState> {
 
-        // Align to Sunday (S M T W T F S)
-        val weekdayOffset = anchor.dayOfWeek.value % 7 // Sun=0
+        // Align to Sunday (S M T W T F S). dayOfWeek.value is Mon=1…Sun=7; % 7 gives Sun=0.
+        val weekdayOffset = anchor.dayOfWeek.value % 7
         val anchorWeekSunday = anchor.minusDays(weekdayOffset.toLong())
 
-        // 4 rows (28 days). Put anchor week on row #2 (index 1):
-        // Row 0: week before
-        // Row 1: anchor week
-        // Row 2: next week
-        // Row 3: following week
-        val start = anchorWeekSunday.minusDays(7)
-        val end = start.plusDays(27)
+        val start = anchorWeekSunday.minusDays(7)   // one week before anchor week
+        val end = start.plusDays(27)                 // 28 days total
 
         val agg = mutableMapOf<LocalDate, Triple<Int, Boolean, Boolean>>()
 
@@ -550,6 +598,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         isLoading = true
     }
 
+    /**
+     * Transitions the UI between online and offline states.
+     * - Stops the shimmer and swipe-to-refresh spinner unconditionally.
+     * - Shows a one-time dialog when entering offline mode.
+     * - On offline→online transition: resets the dialog flag and kicks off [syncPendingReminders].
+     */
     private fun showOffline(offline: Boolean) {
         shimmerLayout.hideShimmer()
         swipeRefresh.isRefreshing = false
@@ -564,7 +618,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                 .setPositiveButton("Got it", null)
                 .show()
         }
-        // Going offline→online resets the dialog flag so it shows again next time
+        // Detect offline→online transition: reset dialog flag and sync any locally-saved reminders.
         if (wasOffline && !offline) {
             offlineDialogShown = false
             syncPendingReminders()
@@ -585,6 +639,15 @@ class ReminderListFragment : Fragment(), Refreshable {
             if (currentReminders.isEmpty()) View.VISIBLE else View.GONE
     }
 
+    /**
+     * Uploads locally-saved "pending" reminders to the server one at a time (serially).
+     * Called automatically when connectivity is restored (offline→online transition).
+     *
+     * Each pending entry was created offline with [ReminderFragment.saveLocally] and stored
+     * in Room with isPending=true. On success the local copy is deleted; on failure it is left
+     * in place to retry next session. After any successful upload, re-fetches from the server
+     * so the list reflects the canonical server state.
+     */
     private fun syncPendingReminders() {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val pending = db.reminderDao().getPending()
@@ -593,12 +656,14 @@ class ReminderListFragment : Fragment(), Refreshable {
             val apiService = ApiClient.getClient().create(ApiService::class.java)
             var anySynced = false
             for (entity in pending) {
+                // Strip the "(Not Backed Up) " prefix before sending to the server.
                 val cleanDesc = entity.description.removePrefix("(Not Backed Up) ")
                 val reminder = entity.toDomain().copy(
                     Description = cleanDesc,
                     Key = entity.pendingKey
                 )
                 try {
+                    // execute() is synchronous — required here because we're already on IO.
                     val response = apiService.addReminder(reminder).execute()
                     if (response.isSuccessful) {
                         db.reminderDao().deleteById(entity.id)
@@ -686,6 +751,12 @@ class ReminderListFragment : Fragment(), Refreshable {
         popup.show()
     }
 
+    /**
+     * Smooth-scrolls the RecyclerView so that [position] appears at the top with an extra
+     * [offsetPx] gap above it (useful for leaving breathing room under the sticky header).
+     * Falls back to plain [smoothScrollToPosition] if the layout manager isn't a
+     * [LinearLayoutManager].
+     */
     private fun RecyclerView.smoothScrollToPositionWithOffset(position: Int, offsetPx: Int) {
         val lm = layoutManager as? LinearLayoutManager ?: run {
             smoothScrollToPosition(position)
@@ -696,7 +767,7 @@ class ReminderListFragment : Fragment(), Refreshable {
             override fun getVerticalSnapPreference(): Int = SNAP_TO_START
 
             override fun calculateDyToMakeVisible(view: View, snapPreference: Int): Int {
-                // default snap-to-start dy, then apply your extra offset
+                // Subtract offsetPx so the item lands [offsetPx] below the top edge.
                 return super.calculateDyToMakeVisible(view, snapPreference) - offsetPx
             }
         }
