@@ -43,6 +43,7 @@ pip3 install waitress
 pip3 install autocorrect
 pip3 install google-genai
 pip3 install bcrypt
+pip3 install pymysql
 ```
 
 ### Set up the config
