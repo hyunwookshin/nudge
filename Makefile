@@ -13,6 +13,7 @@ test:
 	PYTHONPATH=$(PYTHONPATH) make -C data test
 	PYTHONPATH=$(PYTHONPATH) make -C actions test
 	PYTHONPATH=$(PYTHONPATH) make -C job test
+	PYTHONPATH=$(PYTHONPATH) make -C auth test
 	PYTHONPATH=$(PYTHONPATH) make -C spell test
 
 clean:
@@ -20,6 +21,7 @@ clean:
 	PYTHONPATH=$(PYTHONPATH) make -C actions clean
 	PYTHONPATH=$(PYTHONPATH) make -C job clean
 	PYTHONPATH=$(PYTHONPATH) make -C spell clean
+	PYTHONPATH=$(PYTHONPATH) make -C auth clean
 	PYTHONPATH=$(PYTHONPATH) make -C client/android clean
 	PYTHONPATH=$(PYTHONPATH) make -C client/web clean
 
