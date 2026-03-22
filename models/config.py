@@ -26,6 +26,8 @@ class Config():
         self.timezone_offset = info["TimeZoneOffset"]
         self.timezone = info["TimeZone"]
         self.preserved_words = info["PreservedWords"]
+        self.mysql_user = os.getenv("NUDGE_MYSQL_USER", "")
+        self.mysql_password = os.getenv("NUDGE_MYSQL_PASSWORD", "")
 
     def getEmail(self):
         return self.email
@@ -41,3 +43,9 @@ class Config():
 
     def getPreservedWords(self):
         return self.preserved_words
+
+    def getMySQLUser(self):
+        return self.mysql_user
+
+    def getMySQLPassword(self):
+        return self.mysql_password
