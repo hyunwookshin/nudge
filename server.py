@@ -12,9 +12,13 @@ from waitress import serve
 from spell import spell
 from models import reminder, config
 from data import yamldatasource
+from data import mysqldatasource
 from auth import auth
 
 app = Flask(__name__)
+
+MYSQL_DB="mysql"
+DB_IMPLEMENTATION=MYSQL_DB
 
 def get_secure_key():
     securePath = os.getenv("NUDGE_SECURE_KEY_PATH", "")
@@ -105,7 +109,11 @@ def get_reminders():
     user = g.username
     enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+
     reminders = datasource.loadReminders()
     for r in reminders:
         if cfg.getTimeZone():
@@ -150,7 +158,10 @@ def delete_reminder():
     user = g.username
     enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True,  enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     filtered = []
     for r in reminders:
@@ -177,7 +188,10 @@ def add_reminder():
     user = g.username
     enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -247,7 +261,10 @@ def add_reminder_ai():
     user = g.username
     enc_key = auth.get_enc_key(user)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     reminders = datasource.loadReminders()
     speller = spell.CustomSpeller()
 
@@ -336,7 +353,10 @@ def delete_account():
     cfg = config.Config(info)
 
     enc_key = auth.get_enc_key(username)
-    datasource = yamldatasource.YamlDataSource(cfg, username, True, enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     datasource.deleteUser()
 
     err = auth.delete_user(username)

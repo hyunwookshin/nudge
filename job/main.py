@@ -6,10 +6,14 @@ import argparse
 
 from models import config
 from data import yamldatasource
+from data import mysqldatasource
 from remind import RemindJob
 from actions.priority import getPriorities
 from actions.acts import Actions
 from auth import auth
+
+MYSQL_DB="mysql"
+DB_IMPLEMENTATION=MYSQL_DB
 
 def parseArgs():
    parser = argparse.ArgumentParser()
@@ -28,7 +32,10 @@ def main(args):
     enc_key = auth.get_enc_key(user)
     print(user,info, enc_key)
 
-    datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        datasource = mysqldatasource.MysqlDataSource(cfg, user, True, enc_key)
+    else:
+        datasource = yamldatasource.YamlDataSource(cfg, user, True, enc_key)
     priorities = getPriorities(cfg, args.dryrun)
     actions = Actions(priorities)
 

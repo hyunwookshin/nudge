@@ -9,10 +9,12 @@ Restart=always
 RestartSec=5
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 WorkingDirectory=/path/to/nudge
-Environment=OPENAI_API_KEY=...
+Environment=GEMINI_API_KEY=...
 Environment=NUDGE_STORE_PATH=/path/to/nudge/store
 Environment=NUDGE_SECURE_KEY_PATH=/path/to/secure.key
 Environment=NUDGE_CONFIG_PATH=./config.yaml
+Environment=NUDGE_MYSQL_USER=...
+Environment=NUDGE_MYSQL_PASSWORD=....
 ExecStart=/usr/bin/python3 ./server.py
 Restart=always
 RestartSec=5
