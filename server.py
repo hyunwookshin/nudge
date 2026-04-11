@@ -19,6 +19,7 @@ app = Flask(__name__)
 
 MYSQL_DB="mysql"
 DB_IMPLEMENTATION=MYSQL_DB
+SKIP_SPELL=True
 
 def get_secure_key():
     securePath = os.getenv("NUDGE_SECURE_KEY_PATH", "")
@@ -138,6 +139,8 @@ def get_reminders():
 def replaceWords(speller, string, preservedWords):
     tokens = string.split()
     for i in range(len(tokens)):
+        if SKIP_SPELL:
+            continue
         if tokens[i].lower() in preservedWords:
             continue
         tokens[i] = speller.spell(tokens[i])
