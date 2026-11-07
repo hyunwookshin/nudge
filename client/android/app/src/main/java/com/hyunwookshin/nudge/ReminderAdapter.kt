@@ -31,6 +31,8 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     private var reminderCallback: ReminderCallback? = null
     // For updating the mini calendar
     private var onReminderClick: ((Reminder) -> Unit)? = null
+    // tapped card: drawn with a thicker accent bar
+    private var selectedId: String? = null
     fun setOnReminderClick(listener: (Reminder) -> Unit) {
         onReminderClick = listener
     }
@@ -237,6 +239,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
         private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
         private val accentBar: View = itemView.findViewById(R.id.accentBar)
+        private val cardContent: View = itemView.findViewById(R.id.cardContent)
         private val contextIcon: ImageView = itemView.findViewById(R.id.contextIcon)
         private val actionRow: View = itemView.findViewById(R.id.actionRow)
 
@@ -265,11 +268,19 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             } else {
                 read.text = "Verified: " + convert24HourTo12Hour(reminder.Read)
             }
+            // real-life color for some categories (cafe brown, call green, ...), else the priority color;
+            // each has a day and a night shade (deeper on light, brighter on dark)
             val accentColor = ContextCompat.getColor(
                 itemView.context,
-                if (reminder.Priority <= 1) R.color.high_priority_accent else R.color.low_priority_accent
+                contextAccents[contextIconFor(reminder)]
+                    ?: if (reminder.Priority <= 1) R.color.high_priority_accent else R.color.low_priority_accent
             )
-            accentBar.setBackgroundColor(accentColor)
+            // the 9dp column never changes width (so the content never shifts): selected cards
+            // paint all of it, others only the left 5dp
+            val unpainted = if (reminder.Id == selectedId) 0 else (4 * itemView.resources.displayMetrics.density).toInt()
+            accentBar.background = android.graphics.drawable.InsetDrawable(
+                android.graphics.drawable.ColorDrawable(accentColor), 0, 0, unpainted, 0)
+            cardContent.background = cardArt(reminder, accentColor)
 
             val iconRes = contextIconFor(reminder)
             if (iconRes != null) {
@@ -330,6 +341,10 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
             // For updating the mini calendar anchored to the reminder
             itemView.setOnClickListener {
+                val previous = reminders.indexOfFirst { it.Id == selectedId }
+                selectedId = reminder.Id
+                if (previous >= 0) notifyItemChanged(previous)
+                notifyItemChanged(adapterPosition)
                 onReminderClick?.invoke(reminder)
             }
 
@@ -358,6 +373,39 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         setOf("reservation", "reservations") to R.drawable.ic_ctx_reservation,
         setOf("lesson", "lessons") to R.drawable.ic_ctx_lesson,
     )
+
+    // "Pajama print" motifs scattered behind the card content for the playful categories.
+    // Serious ones (appointments, meetings, calls, documents, presentations) stay plain.
+    // tinted with the card's accent color (per-shape alpha in each vector gives the depth).
+    private val contextAccents: Map<Int, Int> = mapOf(
+        R.drawable.ic_ctx_cafe to R.color.ctx_cafe_accent,
+        R.drawable.ic_ctx_call to R.color.ctx_call_accent,
+        R.drawable.ic_ctx_people to R.color.ctx_people_accent,
+        R.drawable.ic_ctx_flight to R.color.ctx_flight_accent,
+        R.drawable.ic_ctx_restaurant to R.color.ctx_food_accent,
+    )
+
+    private val contextMotifs: Map<Int, List<Int>> = mapOf(
+        R.drawable.ic_ctx_flight to listOf(R.drawable.art_flight_plane, R.drawable.art_flight_ticket, R.drawable.art_flight_passport, R.drawable.art_flight_glasses),
+        R.drawable.ic_ctx_car to listOf(R.drawable.art_car_car, R.drawable.art_key, R.drawable.art_car_sign, R.drawable.art_car_cone),
+        R.drawable.ic_ctx_restaurant to listOf(R.drawable.art_food_cutlery, R.drawable.art_food_plate, R.drawable.art_food_bowl, R.drawable.art_food_glass),
+        R.drawable.ic_ctx_cafe to listOf(R.drawable.art_cafe_mug, R.drawable.art_cafe_bean, R.drawable.art_cafe_muffin),
+        R.drawable.ic_ctx_home to listOf(R.drawable.art_home_house, R.drawable.art_key, R.drawable.art_home_tree),
+        R.drawable.ic_ctx_tshirt to listOf(R.drawable.art_clothes_shirt, R.drawable.art_clothes_hanger, R.drawable.art_clothes_sock),
+        R.drawable.ic_ctx_hotel to listOf(R.drawable.art_hotel_bed, R.drawable.art_hotel_card, R.drawable.art_hotel_case, R.drawable.art_hotel_moon),
+        R.drawable.ic_ctx_reservation to listOf(R.drawable.art_res_calendar, R.drawable.art_res_bell, R.drawable.art_res_clock),
+        R.drawable.ic_ctx_lesson to listOf(R.drawable.art_lesson_book, R.drawable.art_pen, R.drawable.art_lesson_cap, R.drawable.art_lesson_apple),
+    )
+
+    private fun ReminderViewHolder.cardArt(reminder: Reminder, accentColor: Int): android.graphics.drawable.Drawable? {
+        val motifRes = contextIconFor(reminder)?.let(contextMotifs::get) ?: return null
+        val ctx = itemView.context
+        val motifs = motifRes.mapNotNull { res ->
+            ContextCompat.getDrawable(ctx, res)?.mutate()?.apply { setTint(accentColor) }
+        }
+        return MotifPatternDrawable(motifs, reminder.Id.hashCode().toLong(),
+            ctx.resources.displayMetrics.density, motifAlpha = 40)   // ~16%: print, not decoration
+    }
 
     // Title wins over description so a stray word in the notes doesn't override the headline.
     private fun contextIconFor(reminder: Reminder): Int? {

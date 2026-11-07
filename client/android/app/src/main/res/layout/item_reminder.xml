@@ -12,10 +12,11 @@
 
     <View
         android:id="@+id/accentBar"
-        android:layout_width="5dp"
+        android:layout_width="9dp"
         android:layout_height="match_parent" />
 
     <LinearLayout
+        android:id="@+id/cardContent"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
