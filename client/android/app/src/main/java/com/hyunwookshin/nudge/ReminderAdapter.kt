@@ -34,15 +34,19 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     // tapped card: drawn with a thicker accent bar
     private var selectedId: String? = null
 
-    /** LIST: the main list (projects are minimal cards). PROJECTS: the Projects page (full cards). */
-    enum class Mode { LIST, PROJECTS }
+    /**
+     * LIST: the main list (projects are minimal cards, member events indented).
+     * PROJECTS: the Projects page (full project cards).
+     * PROJECT_EVENTS: one project's page (plain event cards, nothing indented).
+     */
+    enum class Mode { LIST, PROJECTS, PROJECT_EVENTS }
     var mode: Mode = Mode.LIST
 
     // id -> title of every known project, for the tag on events that belong to one
     private var projectTitles: Map<String, String> = emptyMap()
     fun setProjectTitles(titles: Map<String, String>) { projectTitles = titles }
 
-    /** A project card was tapped in the main list: show it on the Projects page. */
+    /** A project card was tapped: in the main list it opens the Projects page, there it opens the project. */
     var onProjectClick: ((Reminder) -> Unit)? = null
     /** The "+" on an event: add it to a project. */
     var onAddToProject: ((Reminder) -> Unit)? = null
@@ -119,15 +123,10 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
     /** "Nov 10 – Nov 14" (with the year when it isn't this year) for a project's chip. */
     private fun projectRange(r: Reminder): String {
-        val parse = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val start = runCatching { parse.parse(r.Time.take(10)) }.getOrNull()
-        val end = runCatching { parse.parse(r.EndDate) }.getOrNull()
+        val start = runCatching { java.time.LocalDate.parse(r.Time.take(10)) }.getOrNull()
+        val end = runCatching { java.time.LocalDate.parse(r.EndDate) }.getOrNull()
         if (start == null || end == null) return compactTime(r.Time)
-        val thisYear = Calendar.getInstance().get(Calendar.YEAR)
-        fun year(d: java.util.Date) = Calendar.getInstance().apply { time = d }.get(Calendar.YEAR)
-        fun fmt(d: java.util.Date) =
-            SimpleDateFormat(if (year(d) == thisYear) "MMM d" else "MMM d, yyyy", Locale.getDefault()).format(d)
-        return "${fmt(start)} – ${fmt(end)}"
+        return ProjectInfo.rangeLabel(start, end, java.time.LocalDate.now())
     }
 
     fun setReminders(reminders: List<Reminder>) {
@@ -381,7 +380,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             // "+": add this event to a project (needs the server to check the date range)
             val canJoinProject = !readOnly && !isOfflineMode && !reminder.isProject &&
-                !reminder.isPending && mode == Mode.LIST
+                !reminder.isPending && (mode == Mode.LIST || mode == Mode.PROJECT_EVENTS)
             projectButton.visibility = if (canJoinProject) View.VISIBLE else View.GONE
             projectButton.setOnClickListener { onAddToProject?.invoke(reminder) }
             val link = reminder.Link
@@ -418,7 +417,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
             // For updating the mini calendar anchored to the reminder
             itemView.setOnClickListener {
-                if (compactProject) {
+                if (reminder.isProject) {
                     onProjectClick?.invoke(reminder)
                     return@setOnClickListener
                 }

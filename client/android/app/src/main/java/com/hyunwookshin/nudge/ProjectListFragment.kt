@@ -71,6 +71,13 @@ class ProjectListFragment : Fragment(), Refreshable {
         adapter = ReminderAdapter().apply {
             mode = ReminderAdapter.Mode.PROJECTS
             callback?.let { setReminderCallback(it) }
+            // tapping a project opens its own page (events in isolation)
+            onProjectClick = { project ->
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, ProjectDetailFragment.newInstance(project, isOffline))
+                    .addToBackStack(null)
+                    .commit()
+            }
         }
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
@@ -88,7 +95,9 @@ class ProjectListFragment : Fragment(), Refreshable {
 
     private fun dao() = AppDb.get(requireContext()).reminderDao()
 
-    private fun show(projects: List<Reminder>) {
+    private fun show(unsorted: List<Reminder>) {
+        // newest first, by start date
+        val projects = unsorted.sortedByDescending { it.Time }
         adapter.setReminders(projects)
         emptyText.visibility = if (projects.isEmpty()) View.VISIBLE else View.GONE
         // opened from a project's card in the list: scroll to it and give it the thick accent bar

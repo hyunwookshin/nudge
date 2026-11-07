@@ -45,6 +45,7 @@ interface ApiService {
     fun getReminders(
         @Query("include") include: Int? = null,
         @Query("kind") kind: String? = null,   // "project": every project, for the Projects page
+        @Query("parent") parent: String? = null,   // a project's id: that project and all its events, past too
     ): Call<ReminderResponse>
 
     /** Adds an event to a project (empty ParentId removes it); the server checks the date range. */
