@@ -50,8 +50,11 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="6dp"
             android:layout_weight="1"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
             android:text="Start date"
-            android:textAllCaps="false" />
+            android:textAllCaps="false"
+            android:textSize="13sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/projectEnd"
@@ -60,8 +63,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:layout_weight="1"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
             android:text="End date"
-            android:textAllCaps="false" />
+            android:textAllCaps="false"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
