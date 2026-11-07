@@ -5,6 +5,10 @@
         android:title="Add Event" />
 
     <item
+        android:id="@+id/menu_templates"
+        android:title="Templates" />
+
+    <item
         android:id="@+id/menu_toggle_mini_calendar"
         android:title="Toggle Calendar" />
     <item

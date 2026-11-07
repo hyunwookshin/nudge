@@ -8,12 +8,13 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [ReminderEntity::class],
-    version = 2,
+    entities = [ReminderEntity::class, TemplateEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDb : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
+    abstract fun templateDao(): TemplateDao
 
     companion object {
         @Volatile private var INSTANCE: AppDb? = null
@@ -25,6 +26,17 @@ abstract class AppDb : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS templates (" +
+                        "id TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, " +
+                        "link TEXT NOT NULL, priority INTEGER NOT NULL, " +
+                        "isPending INTEGER NOT NULL, pendingKey TEXT NOT NULL, PRIMARY KEY(id))"
+                )
+            }
+        }
+
         fun get(context: Context): AppDb =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -32,7 +44,7 @@ abstract class AppDb : RoomDatabase() {
                     AppDb::class.java,
                     "nudge.db"
                 )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build().also { INSTANCE = it }
             }
     }

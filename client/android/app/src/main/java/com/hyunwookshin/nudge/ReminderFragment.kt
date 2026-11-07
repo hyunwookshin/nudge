@@ -82,6 +82,7 @@ class ReminderFragment : Fragment() {
         private const val ARG_REMINDER = "reminder"
         private const val ARG_PREFILL_DATE = "prefill_date"
         private const val ARG_IS_OFFLINE = "is_offline"
+        private const val ARG_TEMPLATE = "template"
 
         fun newInstance(reminder: Reminder, isOffline: Boolean = false): ReminderFragment {
             val fragment = ReminderFragment()
@@ -95,6 +96,17 @@ class ReminderFragment : Fragment() {
         fun newInstance(isOffline: Boolean = false): ReminderFragment {
             val fragment = ReminderFragment()
             fragment.arguments = Bundle().apply {
+                putBoolean(ARG_IS_OFFLINE, isOffline)
+            }
+            return fragment
+        }
+
+        /** New event prefilled from a template; [date] is set when started from a calendar day. */
+        fun newInstanceFromTemplate(template: Template, date: String? = null, isOffline: Boolean = false): ReminderFragment {
+            val fragment = ReminderFragment()
+            fragment.arguments = Bundle().apply {
+                putParcelable(ARG_TEMPLATE, template)
+                if (!date.isNullOrBlank()) putString(ARG_PREFILL_DATE, date)
                 putBoolean(ARG_IS_OFFLINE, isOffline)
             }
             return fragment
@@ -211,6 +223,7 @@ class ReminderFragment : Fragment() {
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
         saveButton.setOnClickListener { saveReminder() }
+        view.findViewById<Button>(R.id.saveTemplateButton).setOnClickListener { saveAsTemplate() }
 
         linkEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -283,6 +296,17 @@ class ReminderFragment : Fragment() {
                 selectedDate = null
                 selectedTime = null
             }
+        }
+
+        // Prepopulation when user starts a new event from a template (no id: saving creates a new event)
+        val template: Template? = arguments?.getParcelable(ARG_TEMPLATE)
+        template?.let {
+            aiBox.visibility = View.GONE
+            pageTitle.text = "Add Reminder"
+            titleEditText.setText(it.Title)
+            descriptionEditText.setText(it.Description)
+            linkEditText.setText(it.Link)
+            prioritySpinner.setSelection(it.Priority)
         }
 
         fetchAllReminders()
@@ -407,6 +431,64 @@ class ReminderFragment : Fragment() {
         // Reset selected date/time
         selectedDate = null
         selectedTime = null
+    }
+
+    /** Saves the form's content (no date/time/recurrence) as a reusable template. */
+    private fun saveAsTemplate() {
+        val title = titleEditText.text.toString()
+        val description = descriptionEditText.text.toString()
+        if (title.isEmpty() || description.isEmpty()) {
+            Snackbar.make(requireView(), "Title and description are required", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        val template = Template(
+            Title = title,
+            Description = description,
+            Link = linkEditText.text.toString(),
+            Priority = prioritySpinner.selectedItemPosition,
+            Key = passwordEditText.text.toString(),
+        )
+        val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
+        if (isOffline) saveTemplateLocally(template) else sendTemplate(template)
+    }
+
+    private fun sendTemplate(template: Template) {
+        val apiService = ApiClient.getClient().create(ApiService::class.java)
+        beginLoading()
+        apiService.addTemplate(template).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                endLoading()
+                if (!isAdded) return
+                val message = if (response.isSuccessful) "Saved as template" else "Failed to save template"
+                Snackbar.make(requireView(), message, Snackbar.LENGTH_SHORT).show()
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                endLoading()
+                if (!isAdded) return
+                // keep it locally and let the Templates page upload it later
+                saveTemplateLocally(template)
+            }
+        })
+    }
+
+    private fun saveTemplateLocally(template: Template) {
+        val entity = TemplateEntity(
+            id = "pending_${System.currentTimeMillis()}",
+            title = template.Title,
+            description = template.Description,
+            link = template.Link,
+            priority = template.Priority,
+            isPending = true,
+            pendingKey = template.Key,
+        )
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            AppDb.get(requireContext()).templateDao().upsert(entity)
+            withContext(Dispatchers.Main) {
+                if (!isAdded) return@withContext
+                Snackbar.make(requireView(), "Template saved locally — will sync when online", Snackbar.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun sendReminder(reminder: Reminder) {

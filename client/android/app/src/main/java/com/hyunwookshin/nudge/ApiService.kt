@@ -42,6 +42,15 @@ interface ApiService {
     @GET("/reminders")
     fun getReminders(@Query("include") include: Int? = null): Call<ReminderResponse>
 
+    @GET("/templates")
+    fun getTemplates(): Call<TemplateResponse>
+
+    @POST("/add_template")
+    fun addTemplate(@Body template: Template): Call<Void>
+
+    @POST("/delete_template")
+    fun deleteTemplate(@Body template: Template): Call<Void>
+
     @POST("/change_password")
     fun changePassword(@Body req: ChangePasswordRequest): Call<MessageResponse>
 

@@ -362,16 +362,21 @@ class ReminderListFragment : Fragment(), Refreshable {
         if (isLoading) return
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, "+ Add Event")
+        popup.menu.add(0, 2, 1, "+ From Template")
         popup.setOnMenuItemClickListener { item ->
-            if (item.itemId == 1) {
-                // Navigate to ReminderFragment with date prefilled
-                val fragment = ReminderFragment.newInstanceForDate(date.format(argDateFmt), isOffline)
+            // Both navigate with the date prefilled: straight to the editor, or via a template
+            val fragment = when (item.itemId) {
+                1 -> ReminderFragment.newInstanceForDate(date.format(argDateFmt), isOffline)
+                2 -> TemplateListFragment.newInstance(date.format(argDateFmt), isOffline)
+                else -> null
+            }
+            fragment?.let {
                 parentFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
+                    .replace(R.id.fragment_container, it)
                     .addToBackStack(null)
                     .commit()
-                true
-            } else false
+            }
+            fragment != null
         }
         popup.show()
     }
@@ -717,6 +722,14 @@ class ReminderListFragment : Fragment(), Refreshable {
                     val fragment = ReminderFragment.newInstance(isOffline)
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
+
+                R.id.menu_templates -> {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, TemplateListFragment.newInstance(isOffline = isOffline))
                         .addToBackStack(null)
                         .commit()
                     true
