@@ -315,7 +315,7 @@ class ReminderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val goBackButton: Button = view.findViewById(R.id.goBackButton)
+        val goBackButton: View = view.findViewById(R.id.goBackButton)
         goBackButton.setOnClickListener { callback?.onAbortEditReminder() }
 
         if (!NotificationUtils.areNotificationsEnabled(requireContext())) {
@@ -459,8 +459,11 @@ class ReminderFragment : Fragment() {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 endLoading()
                 if (!isAdded) return
-                val message = if (response.isSuccessful) "Saved as template" else "Failed to save template"
-                Snackbar.make(requireView(), message, Snackbar.LENGTH_SHORT).show()
+                if (response.isSuccessful) {
+                    showTemplateSavedDialog(template.Title, savedLocally = false)
+                } else {
+                    Snackbar.make(requireView(), "Failed to save template", Snackbar.LENGTH_SHORT).show()
+                }
             }
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
@@ -486,9 +489,29 @@ class ReminderFragment : Fragment() {
             AppDb.get(requireContext()).templateDao().upsert(entity)
             withContext(Dispatchers.Main) {
                 if (!isAdded) return@withContext
-                Snackbar.make(requireView(), "Template saved locally — will sync when online", Snackbar.LENGTH_LONG).show()
+                showTemplateSavedDialog(template.Title, savedLocally = true)
             }
         }
+    }
+
+    /** Confirms a saved template and offers to open the Templates page or keep editing. */
+    private fun showTemplateSavedDialog(title: String, savedLocally: Boolean) {
+        val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
+        val message = "“$title” was added to your templates." +
+            if (savedLocally) "\nIt's saved on this phone and will sync when you're online." else ""
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.RoundedMaterialDialog)
+            .setTitle("Template saved")
+            .setMessage(message)
+            .setNegativeButton("Stay", null)
+            .setPositiveButton("Go to Templates") { _, _ ->
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, TemplateListFragment.newInstance(isOffline = isOffline))
+                    .addToBackStack(null)
+                    .commit()
+            }
+            .show()
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+            .setTextColor(ContextCompat.getColor(requireContext(), R.color.colorTextPrimary))
     }
 
     private fun sendReminder(reminder: Reminder) {

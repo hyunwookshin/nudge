@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -54,7 +53,7 @@ class TemplateListFragment : Fragment() {
         emptyText = view.findViewById(R.id.emptyText)
         offlineBanner = view.findViewById(R.id.offlineBanner)
         date?.let { view.findViewById<TextView>(R.id.subtitle).text = "Pick a template for $it" }
-        view.findViewById<Button>(R.id.goBackButton).setOnClickListener { parentFragmentManager.popBackStack() }
+        view.findViewById<View>(R.id.goBackButton).setOnClickListener { parentFragmentManager.popBackStack() }
 
         adapter = TemplateAdapter(onUse = ::useTemplate, onDelete = ::deleteTemplate)
         val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView)

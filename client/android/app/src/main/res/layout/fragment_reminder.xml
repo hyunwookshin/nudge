@@ -22,14 +22,30 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:id="@+id/pageTitle"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="26sp"
-                android:text="Add Reminder"
-                android:layout_margin="8dp"
-                android:textColor="?attr/colorOnSurface"/>
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/goBackButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Back"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/pageTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="26sp"
+                    android:text="Add Reminder"
+                    android:textColor="?attr/colorOnSurface"/>
+            </LinearLayout>
 
 
             <!-- AI Quick Add -->
@@ -233,16 +249,6 @@
                     android:textAllCaps="false"
                     android:text="Save" />
 
-                <Button
-                    android:id="@+id/goBackButton"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Back"
-                    android:textAllCaps="false"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:layout_margin="4dp"
-                    android:layout_gravity="center" />
             </LinearLayout>
 
             <!-- secondary action on its own row so the Save / Back row isn't crowded -->
