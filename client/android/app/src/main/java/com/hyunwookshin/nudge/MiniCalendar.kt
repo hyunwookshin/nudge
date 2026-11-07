@@ -1,16 +1,30 @@
 package com.hyunwookshin.nudge
 
 import java.time.LocalDate
+import java.time.YearMonth
 
 data class DayState(
     val date: LocalDate,
     val count: Int,
     val hasHigh: Boolean,
-    val hasLow: Boolean
+    val hasLow: Boolean,
+    // false for days outside the month that most of the visible weeks belong to (their number is dimmed)
+    val inMajorityMonth: Boolean = true
 )
 
 /** Layout math for the 4-week mini calendar (pure functions, unit tested in MiniCalendarMathTest). */
 object MiniCalendarMath {
+    /**
+     * The month most of [dates] fall in. A tie goes to [preferred] (the month the title shows) when it is
+     * one of the tied months, otherwise to the later month.
+     */
+    fun majorityMonth(dates: List<LocalDate>, preferred: YearMonth): YearMonth {
+        val counts = dates.groupingBy { YearMonth.from(it) }.eachCount()
+        val best = counts.values.maxOrNull() ?: return preferred
+        val leaders = counts.filterValues { it == best }.keys
+        return if (preferred in leaders) preferred else leaders.max()
+    }
+
     /** Days shown for [anchor]: weeks start on Sunday, the anchor's week is the 2nd of 4 rows. */
     fun visibleRange(anchor: LocalDate): ClosedRange<LocalDate> {
         val start = anchor.minusDays((anchor.dayOfWeek.value % 7).toLong()).minusDays(7)

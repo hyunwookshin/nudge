@@ -587,10 +587,12 @@ class ReminderListFragment : Fragment(), Refreshable {
             agg[date] = Triple(count, hasHigh, hasLow)
         }
 
-        return (0..27).map { offset ->
-            val d = start.plusDays(offset.toLong())
+        val dates = (0..27).map { start.plusDays(it.toLong()) }
+        val majority = MiniCalendarMath.majorityMonth(dates, java.time.YearMonth.from(anchor))
+        return dates.map { d ->
             val triple = agg[d] ?: Triple(0, false, false)
-            DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third)
+            DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third,
+                inMajorityMonth = java.time.YearMonth.from(d) == majority)
         }
     }
 

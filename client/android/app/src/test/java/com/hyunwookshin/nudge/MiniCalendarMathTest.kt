@@ -73,4 +73,52 @@ class MiniCalendarMathTest {
             assertEquals(date.toString(), d("2026-07-26"), topRow(anchor))
         }
     }
+
+    // ---- majority month (dimming of the neighbouring month) ----
+
+    private fun window(anchor: String) =
+        MiniCalendarMath.visibleRange(d(anchor)).let { r -> (0..27).map { r.start.plusDays(it.toLong()) } }
+
+    @Test
+    fun majority_is_the_month_with_most_of_the_28_days() {
+        // anchor Nov 10: Oct 25 .. Nov 21 -> November has 21 of 28 days
+        assertEquals(java.time.YearMonth.of(2026, 11), MiniCalendarMath.majorityMonth(window("2026-11-10"), java.time.YearMonth.of(2026, 11)))
+        // anchor Nov 30: Nov 22 .. Dec 19 -> December has 19 of 28, even though the anchor is in November
+        assertEquals(java.time.YearMonth.of(2026, 12), MiniCalendarMath.majorityMonth(window("2026-11-30"), java.time.YearMonth.of(2026, 11)))
+    }
+
+    @Test
+    fun tie_goes_to_the_preferred_month_otherwise_the_later_one() {
+        // 14/14 split: Jan 31 2027 anchor? build one explicitly instead of hunting for it
+        val dates = (0..13).map { d("2026-11-17").plusDays(it.toLong()) } + (0..13).map { d("2026-12-01").plusDays(it.toLong()) }
+        // Nov 17..30 (14 days) and Dec 1..14 (14 days)
+        assertEquals(java.time.YearMonth.of(2026, 11), MiniCalendarMath.majorityMonth(dates, java.time.YearMonth.of(2026, 11)))
+        assertEquals(java.time.YearMonth.of(2026, 12), MiniCalendarMath.majorityMonth(dates, java.time.YearMonth.of(2026, 12)))
+        assertEquals(java.time.YearMonth.of(2026, 12), MiniCalendarMath.majorityMonth(dates, java.time.YearMonth.of(2027, 3)))   // unrelated preferred
+    }
+
+    @Test
+    fun majority_month_is_always_decided_and_the_window_touches_at_most_two_months() {
+        var day = d("2026-01-01")
+        while (day < d("2029-01-01")) {            // every day of three years, incl. a leap February
+            val w = MiniCalendarMath.visibleRange(day).let { r -> (0..27).map { r.start.plusDays(it.toLong()) } }
+            val months = w.map { java.time.YearMonth.from(it) }.distinct()
+            assertTrue(day.toString(), months.size <= 2)
+            val majority = MiniCalendarMath.majorityMonth(w, java.time.YearMonth.from(day))
+            assertTrue(day.toString(), majority in months)
+            // at least half of the days are in the majority month
+            assertTrue(day.toString(), w.count { java.time.YearMonth.from(it) == majority } >= 14)
+            day = day.plusDays(1)
+        }
+    }
+
+    @Test
+    fun month_arrows_anchor_keeps_the_title_month_as_the_majority() {
+        // jumpMonth anchors on the 10th: the shown month must be the majority month every time
+        for (m in 1..12) {
+            val anchor = d("2026-01-10").plusMonths(m.toLong() - 1)
+            assertEquals(anchor.toString(), java.time.YearMonth.from(anchor),
+                MiniCalendarMath.majorityMonth(window(anchor.toString()), java.time.YearMonth.from(anchor)))
+        }
+    }
 }

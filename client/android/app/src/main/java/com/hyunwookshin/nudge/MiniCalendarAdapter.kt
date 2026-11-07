@@ -55,6 +55,8 @@ class MiniCalendarAdapter(
             val today = LocalDate.now()
 
             dayNumber.text = state.date.dayOfMonth.toString()
+            // days of the neighbouring month are dimmed (number only) so month boundaries stand out
+            dayNumber.alpha = if (state.inMajorityMonth) 1f else 0.5f
 
             // Count badge (only show if >= 1)
             if (state.count >= 1) {
