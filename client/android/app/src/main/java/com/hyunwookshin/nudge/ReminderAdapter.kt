@@ -349,7 +349,12 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             time.background = GradientDrawable().apply {
                 cornerRadius = 100f * density
-                setColor(ColorUtils.setAlphaComponent(accentColor, 0x2E))
+                // high priority keeps its red even on category-colored cards: same fill as the
+                // calendar's high-priority days; otherwise a light tint of the card's accent
+                setColor(
+                    if (reminder.Priority <= 1) ContextCompat.getColor(ctx, R.color.high_priority)
+                    else ColorUtils.setAlphaComponent(accentColor, 0x2E)
+                )
             }
             actionRow.setBackgroundColor(ColorUtils.setAlphaComponent(accentColor, 0x14))
             actionRow.visibility =
