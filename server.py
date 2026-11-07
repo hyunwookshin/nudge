@@ -6,11 +6,12 @@ import copy
 import pytz
 import yaml
 import os
+import re
 import ai
 from waitress import serve
 
 from spell import spell
-from models import reminder, template, config
+from models import reminder, template, config, project
 from data import yamldatasource
 from data import mysqldatasource
 from auth import auth
@@ -34,6 +35,23 @@ def getCurrentUTCTime():
 def recent(reminder):
     current_utc_time = getCurrentUTCTime()
     return (reminder.time - current_utc_time).total_seconds() >= 0
+
+def local_tz(cfg):
+    """The user's timezone (same choice as /reminders)."""
+    if cfg.getTimeZone():
+        return pytz.timezone(cfg.getTimeZone())
+    return timezone(timedelta(hours=cfg.getTimeZoneOffset()))
+
+def local_day(r, cfg):
+    """The local calendar date a reminder falls on (r.time is UTC when freshly loaded)."""
+    return r.time.astimezone(local_tz(cfg)).date()
+
+def in_window(r, cutoff, tz):
+    """Reminder is shown if it is at/after cutoff; an ongoing project stays until its last
+    day is over, because the calendar needs its band even though it started earlier."""
+    if r.time >= cutoff:
+        return True
+    return r.is_project() and r.end_date >= cutoff.astimezone(tz).strftime("%Y-%m-%d")
 
 def unpack_repeating(reminders):
     """Expand repeating reminders into individual instances up to 16 weeks from now.
@@ -127,14 +145,21 @@ def get_reminders():
             r.time = r.time.astimezone(timezone(offset))
             r.read = r.read.astimezone(timezone(offset))
 
+    if request.args.get("kind") == reminder.KIND_PROJECT:
+        # the Projects page: every project, past and future
+        projects = sorted((r for r in reminders if r.is_project()), key=lambda r: r.time)
+        return jsonify({ "reminders": [ r.toInfo() for r in projects ] }), 200
+
     reminders = unpack_repeating(reminders)
+    tz = local_tz(cfg)
 
     try:
         days = int(include)
         cutoff = getCurrentUTCTime() - timedelta(days=days)
-        return jsonify({ "reminders": [ r.toInfo() for r in reminders if r.time >= cutoff ] }), 200
+        return jsonify({ "reminders": [ r.toInfo() for r in reminders if in_window(r, cutoff, tz) ] }), 200
     except (ValueError, TypeError):
-        return jsonify({ "reminders": [ r.toInfo() for r in reminders if recent(r) ] }), 200
+        cutoff = getCurrentUTCTime()
+        return jsonify({ "reminders": [ r.toInfo() for r in reminders if in_window(r, cutoff, tz) ] }), 200
 
 def replaceWords(speller, string, preservedWords):
     tokens = string.split()
@@ -171,6 +196,12 @@ def delete_reminder():
         if r.id == reminderId:
             continue
         filtered.append(r)
+
+    # deleting a project keeps its events: they just leave the project
+    if any(r.id == reminderId and r.is_project() for r in reminders):
+        for r in filtered:
+            if r.parent_id == reminderId:
+                r.parent_id = ""
 
     datasource.storeReminders(filtered)
     if len(filtered) < len(reminders):
@@ -226,6 +257,37 @@ def add_reminder():
     info["Snooze"] = data.get("Snooze", 0)
     info["Repeat"] = int(data.get("Repeat", 0))
     info["Id"] = id
+
+    # Project fields. A client that does not send them (an older app) must not wipe what is stored.
+    existing = next((x for x in reminders if id and x.id == id), None)
+    info["Kind"] = data.get("Kind", existing.kind if existing else reminder.KIND_EVENT)
+    info["EndDate"] = data.get("EndDate", existing.end_date if existing else "")
+    info["ProjectType"] = data.get("ProjectType", existing.project_type if existing else "")
+    info["ParentId"] = data.get("ParentId", existing.parent_id if existing else "")
+    start_day = localtime.date()
+
+    if info["Kind"] == reminder.KIND_PROJECT:
+        info["Repeat"] = 0
+        info["ParentId"] = ""
+        error = project.check_project_dates(start_day, info["EndDate"])
+        if error:
+            return jsonify({"message": error}), 400
+        # its events must still fit after the dates were changed
+        member_days = [local_day(x, cfg) for x in reminders if id and x.parent_id == id]
+        outside = project.outside_members(member_days, start_day, project.parse_day(info["EndDate"]))
+        if outside:
+            return jsonify({"message": f"{outside} event(s) in this project would fall outside its date range"}), 400
+    else:
+        info["EndDate"] = ""
+        info["ProjectType"] = ""
+        if info["ParentId"]:
+            parent = next((x for x in reminders if x.id == info["ParentId"] and x.is_project()), None)
+            if parent is None:
+                return jsonify({"message": project.NO_SUCH_PROJECT}), 400
+            error = project.check_member(start_day, local_day(parent, cfg), parent.end_date)
+            if error:
+                return jsonify({"message": error}), 400
+
     r = reminder.Reminder(info)
     orig_reminders = reminders[:]
     reminders = []
@@ -305,6 +367,36 @@ def add_template():
     datasource.storeTemplates(templates)
 
     return jsonify({"message": "Template added successfully!", "Id": t.id}), 200
+
+@app.route('/set_project', methods=['POST'])
+@auth.require_user
+def set_project():
+    """Add an event to a project (or take it out with an empty ParentId)."""
+    data = request.json
+    # a tapped occurrence of a repeating event ("<id>_r3") means the whole series
+    reminderId = re.sub(r"_r\d+$", "", data.get("Id", ""))
+    parentId = data.get("ParentId", "") or ""
+
+    cfg, datasource = user_datasource()
+    reminders = datasource.loadReminders()
+
+    target = next((r for r in reminders if r.id == reminderId), None)
+    if target is None:
+        return jsonify({"message": "No reminder found"}), 404
+    if target.is_project():
+        return jsonify({"message": "A project can't be added to a project"}), 400
+
+    if parentId:
+        proj = next((r for r in reminders if r.id == parentId and r.is_project()), None)
+        if proj is None:
+            return jsonify({"message": project.NO_SUCH_PROJECT}), 400
+        error = project.check_member(local_day(target, cfg), local_day(proj, cfg), proj.end_date)
+        if error:
+            return jsonify({"message": error}), 400
+
+    target.parent_id = parentId
+    datasource.storeReminders(reminders)
+    return jsonify({"message": "Project updated"}), 200
 
 @app.route('/add_reminder_ai', methods=['POST'])
 @auth.require_user
