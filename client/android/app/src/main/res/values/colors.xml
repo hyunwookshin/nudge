@@ -13,7 +13,13 @@
     <color name="high_priority">#FFBCC3</color>
     <color name="low_priority">#E3E3E3</color>
     <color name="high_priority_accent">#C8384F</color>
-    <color name="low_priority_accent">#8C8C8C</color>
+    <color name="low_priority_accent">#6E6E6E</color>
+    <!-- category accents (real-life colors), deeper on light backgrounds -->
+    <color name="ctx_cafe_accent">#795034</color>
+    <color name="ctx_call_accent">#2E7D32</color>
+    <color name="ctx_people_accent">#1F5FBF</color>
+    <color name="ctx_flight_accent">#0A8BC9</color>
+    <color name="ctx_food_accent">#5A9A28</color>
     <color name="card_surface">#FFFFFF</color>
     <color name="card_stroke">#E3E3E6</color>
 </resources>
