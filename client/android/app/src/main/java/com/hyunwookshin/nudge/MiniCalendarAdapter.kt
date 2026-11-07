@@ -16,6 +16,16 @@ class MiniCalendarAdapter(
 ) : RecyclerView.Adapter<MiniCalendarAdapter.VH>() {
 
     private var days: List<DayState> = emptyList()
+    // date of the selected reminder card, ringed in that card's accent color
+    private var selectedDate: LocalDate? = null
+    private var selectedColor: Int = 0
+
+    fun setSelected(date: LocalDate?, color: Int = 0) {
+        if (date == selectedDate && color == selectedColor) return
+        selectedDate = date
+        selectedColor = color
+        notifyDataSetChanged()
+    }
 
     fun submit(days: List<DayState>) {
         this.days = days
@@ -30,7 +40,8 @@ class MiniCalendarAdapter(
     override fun getItemCount(): Int = days.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(days[position], onDayClick, onDayLongPress)
+        holder.bind(days[position], onDayClick, onDayLongPress,
+            if (days[position].date == selectedDate) selectedColor else null)
     }
 
     class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -38,7 +49,8 @@ class MiniCalendarAdapter(
         private val dayNumber: TextView = itemView.findViewById(R.id.dayNumber)
         private val dayCount: TextView = itemView.findViewById(R.id.dayCount)
 
-        fun bind(state: DayState, onDayClick: ((LocalDate) -> Unit)?, onDayLongPress: ((LocalDate, View) -> Unit)?) {
+        fun bind(state: DayState, onDayClick: ((LocalDate) -> Unit)?, onDayLongPress: ((LocalDate, View) -> Unit)?,
+                 selectedRing: Int? = null) {
             val ctx = itemView.context
             val today = LocalDate.now()
 
@@ -74,6 +86,12 @@ class MiniCalendarAdapter(
                 val todayStroke = if (night) android.graphics.Color.WHITE else android.graphics.Color.BLACK
                 card.strokeWidth = dp(ctx, 2)
                 card.strokeColor = todayStroke
+            }
+
+            // Selected reminder's date: ring in the card's accent color (wins over today's ring)
+            if (selectedRing != null) {
+                card.strokeWidth = dp(ctx, 3)
+                card.strokeColor = selectedRing
             }
 
             itemView.setOnClickListener { onDayClick?.invoke(state.date) }

@@ -95,17 +95,19 @@ class ReminderListFragment : Fragment(), Refreshable {
         val calendar = Calendar.getInstance()
 
         overflowButton = view.findViewById(R.id.overflowButton)
-        overflowButton.setOnClickListener { showOverflowMenu() }
+        overflowButton.setOnClickListener { clearCardSelection(); showOverflowMenu() }
         periodPill = view.findViewById(R.id.periodPill)
         renderPeriodPill()
 
         periodPill.setOnClickListener { anchor ->
+            clearCardSelection()
             showPeriodMenu(anchor)
         }
 
         calendarTogglePill = view.findViewById(R.id.calendarTogglePill)
         renderCalendarTogglePill()
         calendarTogglePill.setOnClickListener {
+            clearCardSelection()
             calendarVisible = !calendarVisible
 
             renderCalendarTogglePill()
@@ -178,6 +180,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         swipeRefresh.setOnRefreshListener { fetchReminders() }
         addReminderButton = view.findViewById(R.id.addReminderButton)
         addReminderButton.setOnClickListener {
+            clearCardSelection()
             val fragment = ReminderFragment.newInstance(isOffline)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -189,8 +192,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         miniCalPrev = view.findViewById(R.id.miniCalPrev)
         miniCalNext = view.findViewById(R.id.miniCalNext)
 
-        miniCalPrev.setOnClickListener { jumpMonthMiniCalendar(-1) }
-        miniCalNext.setOnClickListener { jumpMonthMiniCalendar(+1) }
+        miniCalPrev.setOnClickListener { clearCardSelection(); jumpMonthMiniCalendar(-1) }
+        miniCalNext.setOnClickListener { clearCardSelection(); jumpMonthMiniCalendar(+1) }
 
         calendarContainer = view.findViewById(R.id.miniCalendarContainer)
         calendarContainer.visibility = if (calendarVisible) View.VISIBLE else View.GONE
@@ -206,17 +209,36 @@ class ReminderListFragment : Fragment(), Refreshable {
 
             setOnReminderClick { reminder ->
                 val date = reminderLocalDate(reminder) ?: return@setOnReminderClick
-
-                // Reanchor mini calendar to this reminder’s date
-                miniCalAnchor = date
-                updateMiniCalendarMonth(miniCalAnchor)
-                miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+                // ring the card's date in the card's accent color, and bring it into view if needed
+                val color = CardStyle.accentColor(requireContext(),
+                    CardStyle.contextIconFor(reminder.Title, reminder.Description), reminder.Priority)
+                miniCalendarAdapter.setSelected(date, color)
+                focusMiniCalendarOn(date)
             }
         }
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
+        // a tap on empty list space (not on a card) clears the card highlight
+        // only a real tap counts: not the end of a scroll or fling that happens to finish below the cards
+        val tapSlop = android.view.ViewConfiguration.get(requireContext()).scaledTouchSlop
+        recyclerView.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            private var downX = 0f
+            private var downY = 0f
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> { downX = e.x; downY = e.y }
+                    MotionEvent.ACTION_UP -> {
+                        val isTap = abs(e.x - downX) < tapSlop && abs(e.y - downY) < tapSlop &&
+                            e.eventTime - e.downTime < android.view.ViewConfiguration.getTapTimeout() * 2
+                        if (isTap && rv.findChildViewUnder(e.x, e.y) == null) clearCardSelection()
+                    }
+                }
+                return false
+            }
+        })
         reminderAdapter.attachSwipeToDelete(recyclerView) { swiping -> swipeRefresh.isEnabled = !swiping }
+        reminderAdapter.onSelectionCleared = { miniCalendarAdapter.setSelected(null) }
         progressBar.visibility = View.VISIBLE
         db = AppDb.get(requireContext())
         loadCachedReminders()
@@ -356,6 +378,7 @@ class ReminderListFragment : Fragment(), Refreshable {
 
         miniCalendarAdapter = MiniCalendarAdapter(
             onDayClick = { clickedDate ->
+                clearCardSelection()
                 // 1) If the clicked date is on different month,
                 // recenters the mini calendar so clicked date becomes the anchor
                 // Only re-anchor if user clicked a day in a different month than what we're showing
@@ -524,6 +547,21 @@ class ReminderListFragment : Fragment(), Refreshable {
      * Each day is annotated with how many reminders fall on it and whether any are
      * high-priority (priority ≤ 1) or low-priority, for dot rendering in the cell.
      */
+    /** Un-highlights the selected card and its date ring (a tap anywhere other than a card). */
+    private fun clearCardSelection() {
+        reminderAdapter.clearSelection()
+        miniCalendarAdapter.setSelected(null)
+    }
+
+    /** Brings [date] into the mini calendar, moving it only when needed (MiniCalendarMath.anchorToShow). */
+    private fun focusMiniCalendarOn(date: LocalDate) {
+        val anchor = MiniCalendarMath.anchorToShow(date, miniCalAnchor)
+        if (anchor == miniCalAnchor) return
+        miniCalAnchor = anchor
+        updateMiniCalendarMonth(miniCalAnchor)
+        miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
+    }
+
     private fun buildMiniCalendarDays(
         reminders: List<Reminder>,
         anchor: LocalDate

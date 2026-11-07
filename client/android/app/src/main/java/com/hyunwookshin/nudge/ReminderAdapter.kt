@@ -36,6 +36,16 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     // Template.matchKey() of every template, for the [T] badge
     private var templateKeys: Set<String> = emptySet()
 
+    // told when the selected card goes away (e.g. swiped), so the calendar ring can go too
+    var onSelectionCleared: (() -> Unit)? = null
+
+    /** Un-highlights the tapped card (tap elsewhere). */
+    fun clearSelection() {
+        val previous = reminders.indexOfFirst { it.Id == selectedId }
+        selectedId = null
+        if (previous >= 0) notifyItemChanged(previous)
+    }
+
     fun setTemplateKeys(keys: Set<String>) {
         if (keys == templateKeys) return
         templateKeys = keys
@@ -130,6 +140,10 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 }
                 reminders = reminders.toMutableList().apply { removeAt(position) }
                 notifyItemRemoved(position)
+                if (reminder.Id == selectedId) {
+                    selectedId = null
+                    onSelectionCleared?.invoke()
+                }
                 Snackbar.make(recyclerView, "Reminder deleted", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
                         reminders = reminders.toMutableList().apply { add(minOf(position, size), reminder) }
