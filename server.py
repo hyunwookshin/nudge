@@ -10,7 +10,7 @@ import ai
 from waitress import serve
 
 from spell import spell
-from models import reminder, config
+from models import reminder, template, config
 from data import yamldatasource
 from data import mysqldatasource
 from auth import auth
@@ -240,6 +240,71 @@ def add_reminder():
     datasource.storeReminders(reminders)
 
     return jsonify({"message": "Reminder added successfully!"}), 200
+
+def user_datasource():
+    """Config and datasource for the signed-in user (same choice as the reminder endpoints)."""
+    configPath = os.getenv("NUDGE_CONFIG_PATH", "")
+    with open(configPath, "r") as f:
+        info = yaml.safe_load(f.read().strip())
+    cfg = config.Config(info)
+
+    user = g.username
+    enc_key = auth.get_enc_key(user)
+
+    if DB_IMPLEMENTATION == MYSQL_DB:
+        return cfg, mysqldatasource.MySQLDataSource(cfg, user, True, enc_key)
+    return cfg, yamldatasource.YamlDataSource(cfg, user, True, enc_key)
+
+@app.route('/templates', methods=['GET'])
+@auth.require_user
+def get_templates():
+    _, datasource = user_datasource()
+    templates = datasource.loadTemplates()
+    return jsonify({"templates": [t.toInfo() for t in templates]}), 200
+
+@app.route('/delete_template', methods=['POST'])
+@auth.require_user
+def delete_template():
+
+    data = request.json
+    templateId = data.get("Id", "")
+
+    _, datasource = user_datasource()
+    templates = datasource.loadTemplates()
+    filtered = [t for t in templates if t.id != templateId]
+
+    datasource.storeTemplates(filtered)
+    if len(filtered) < len(templates):
+        return jsonify({"message": "Template removed successfully!"}), 200
+    return jsonify({"message": "No template found"}), 500
+
+@app.route('/add_template', methods=['POST'])
+@auth.require_user
+def add_template():
+
+    data = request.json
+    secureKey = data["Key"]
+    if secureKey != get_secure_key():
+        return jsonify({"message": "Key mismatch!"}), 401
+
+    cfg, datasource = user_datasource()
+    templates = datasource.loadTemplates()
+    speller = spell.CustomSpeller()
+
+    info = {}
+    info["Title"] = replaceWords(speller, data["Title"], cfg.getPreservedWords())
+    info["Description"] = replaceWords(speller, data["Description"], cfg.getPreservedWords())
+    info["Link"] = data.get("Link", "")
+    info["Priority"] = int(data.get("Priority", 2))
+    info["Id"] = data.get("Id", "")
+    t = template.Template(info)
+
+    # upsert: replace the template with the same id, if any
+    templates = [orig for orig in templates if orig.id != t.id]
+    templates.append(t)
+    datasource.storeTemplates(templates)
+
+    return jsonify({"message": "Template added successfully!", "Id": t.id}), 200
 
 @app.route('/add_reminder_ai', methods=['POST'])
 @auth.require_user
