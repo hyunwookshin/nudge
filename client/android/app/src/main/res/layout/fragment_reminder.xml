@@ -234,17 +234,6 @@
                     android:text="Save" />
 
                 <Button
-                    android:id="@+id/saveTemplateButton"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Save as Template"
-                    android:textAllCaps="false"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:layout_margin="4dp"
-                    android:layout_gravity="center" />
-
-                <Button
                     android:id="@+id/goBackButton"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
@@ -255,6 +244,18 @@
                     android:layout_margin="4dp"
                     android:layout_gravity="center" />
             </LinearLayout>
+
+            <!-- secondary action on its own row so the Save / Back row isn't crowded -->
+            <Button
+                android:id="@+id/saveTemplateButton"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginHorizontal="4dp"
+                android:text="Save as Template"
+                android:textAllCaps="false"
+                android:textColor="@color/colorPrimaryDark" />
 
         </LinearLayout>
     </ScrollView>
