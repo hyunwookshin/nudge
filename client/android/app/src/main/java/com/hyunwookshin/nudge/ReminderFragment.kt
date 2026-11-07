@@ -43,6 +43,9 @@ class ReminderFragment : Fragment() {
     private lateinit var prioritySpinner: Spinner
     private lateinit var repeatSpinner: Spinner
     private lateinit var saveButton: Button
+    private lateinit var saveTemplateButton: Button
+    // Template.matchKey() of every saved template: Save as Template stays off while the form matches one
+    private val templateKeys = mutableSetOf<String>()
     private lateinit var passwordEditText: EditText
     private lateinit var snoozeSpinner: Spinner
     private lateinit var idEditText: EditText
@@ -223,7 +226,8 @@ class ReminderFragment : Fragment() {
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
         saveButton.setOnClickListener { saveReminder() }
-        view.findViewById<Button>(R.id.saveTemplateButton).setOnClickListener { saveAsTemplate() }
+        saveTemplateButton = view.findViewById(R.id.saveTemplateButton)
+        saveTemplateButton.setOnClickListener { saveAsTemplate() }
 
         linkEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -317,6 +321,7 @@ class ReminderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val goBackButton: View = view.findViewById(R.id.goBackButton)
         goBackButton.setOnClickListener { callback?.onAbortEditReminder() }
+        watchFormForTemplateMatch()
 
         if (!NotificationUtils.areNotificationsEnabled(requireContext())) {
             showNotificationDisabledDialog()
@@ -433,6 +438,37 @@ class ReminderFragment : Fragment() {
         selectedTime = null
     }
 
+    private fun formMatchKey(): String = Template.matchKey(
+        titleEditText.text.toString(), descriptionEditText.text.toString(),
+        linkEditText.text.toString(), prioritySpinner.selectedItemPosition)
+
+    private fun updateSaveTemplateButton() {
+        val matches = formMatchKey() in templateKeys
+        saveTemplateButton.isEnabled = !matches
+        saveTemplateButton.alpha = if (matches) 0.4f else 1f
+    }
+
+    /** Keeps Save as Template disabled while the form equals an existing template (until it is edited). */
+    private fun watchFormForTemplateMatch() {
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) = updateSaveTemplateButton()
+        }
+        listOf(titleEditText, descriptionEditText, linkEditText).forEach { it.addTextChangedListener(watcher) }
+        prioritySpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, v: View?, position: Int, id: Long) = updateSaveTemplateButton()
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val keys = withContext(Dispatchers.IO) {
+                AppDb.get(requireContext()).templateDao().getAll().map { it.toDomain().matchKey() }
+            }
+            templateKeys.addAll(keys)
+            updateSaveTemplateButton()
+        }
+    }
+
     /** Saves the form's content (no date/time/recurrence) as a reusable template. */
     private fun saveAsTemplate() {
         val title = titleEditText.text.toString()
@@ -496,6 +532,9 @@ class ReminderFragment : Fragment() {
 
     /** Confirms a saved template and offers to open the Templates page or keep editing. */
     private fun showTemplateSavedDialog(title: String, savedLocally: Boolean) {
+        // the form now matches a template: disabled until it is edited again
+        templateKeys.add(formMatchKey())
+        updateSaveTemplateButton()
         val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
         val message = "“$title” was added to your templates." +
             if (savedLocally) "\nIt's saved on this phone and will sync when you're online." else ""

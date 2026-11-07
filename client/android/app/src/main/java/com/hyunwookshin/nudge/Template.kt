@@ -41,6 +41,9 @@ data class Template(
         return 0
     }
 
+    /** Identity of the template's content; a reminder or form with the same key "matches" it. */
+    fun matchKey(): String = matchKey(Title, Description, Link, Priority)
+
     /** A new (unsaved) reminder with this template's content; the date is up to the user. */
     fun toNewReminder(date: String = ""): Reminder = Reminder(
         Title = Title,
@@ -58,6 +61,10 @@ data class Template(
         override fun newArray(size: Int): Array<Template?> {
             return arrayOfNulls(size)
         }
+
+        /** The fields a template stores, joined; equal keys mean the content is the same. */
+        fun matchKey(title: String, description: String, link: String, priority: Int): String =
+            listOf(title.trim(), description.trim(), link.trim(), priority.toString()).joinToString("\u001F")
 
         /** Template from an event's content (Save as Template on the edit screen). */
         fun fromReminder(reminder: Reminder): Template = Template(

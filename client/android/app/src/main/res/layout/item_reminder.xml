@@ -177,6 +177,20 @@
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
+
+            <!-- [T]: this reminder's content matches one of the user's templates -->
+            <TextView
+                android:id="@+id/templateBadge"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Matches a template"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:text="T"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

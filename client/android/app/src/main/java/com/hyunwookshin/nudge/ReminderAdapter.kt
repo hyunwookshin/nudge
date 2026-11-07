@@ -33,6 +33,14 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     private var onReminderClick: ((Reminder) -> Unit)? = null
     // tapped card: drawn with a thicker accent bar
     private var selectedId: String? = null
+    // Template.matchKey() of every template, for the [T] badge
+    private var templateKeys: Set<String> = emptySet()
+
+    fun setTemplateKeys(keys: Set<String>) {
+        if (keys == templateKeys) return
+        templateKeys = keys
+        notifyDataSetChanged()
+    }
     fun setOnReminderClick(listener: (Reminder) -> Unit) {
         onReminderClick = listener
     }
@@ -234,6 +242,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val time: TextView = itemView.findViewById(R.id.time)
         private val read: TextView = itemView.findViewById(R.id.read)
         private val countdown: TextView = itemView.findViewById(R.id.countdown)
+        private val templateBadge: TextView = itemView.findViewById(R.id.templateBadge)
         private val id: TextView = itemView.findViewById(R.id.id)
         private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
         private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
@@ -278,6 +287,17 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             cardContent.background = CardStyle.cardArt(itemView.context, iconRes, accentColor, reminder.Id.hashCode().toLong())
             CardStyle.styleIcon(contextIcon, iconRes, accentColor)
 
+            val matchesTemplate = Template.matchKey(reminder.Title, reminder.Description, reminder.Link, reminder.Priority) in templateKeys
+            templateBadge.visibility = if (matchesTemplate) View.VISIBLE else View.GONE
+            if (matchesTemplate) {
+                val density = itemView.resources.displayMetrics.density
+                templateBadge.setTextColor(accentColor)
+                templateBadge.background = GradientDrawable().apply {
+                    cornerRadius = 3f * density
+                    setStroke((1.5f * density).toInt(), accentColor)
+                }
+            }
+
             val isVirtual = reminder.Id.matches(Regex(".*_r\\d+$"))
             if (readOnly) {
                 editButton.visibility = View.GONE
@@ -319,7 +339,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             actionRow.setBackgroundColor(ColorUtils.setAlphaComponent(accentColor, 0x14))
             actionRow.visibility =
-                if (listOf(editButton, copyButton, linkButton, countdown).any { it.visibility == View.VISIBLE })
+                if (listOf(editButton, copyButton, linkButton, countdown, templateBadge).any { it.visibility == View.VISIBLE })
                     View.VISIBLE else View.GONE
 
             // For updating the mini calendar anchored to the reminder

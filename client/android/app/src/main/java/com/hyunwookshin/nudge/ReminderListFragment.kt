@@ -233,7 +233,32 @@ class ReminderListFragment : Fragment(), Refreshable {
      * stale-but-fast data while the network fetch is in progress.
      * The shimmer stays running (started by fetchReminders) until the network responds.
      */
+    /** Feeds the adapter's [T] badges from the cached templates, refreshing the cache from the server when online. */
+    private fun refreshTemplateKeys(fromServer: Boolean) {
+        val dao = db.templateDao()
+        fun publish() = viewLifecycleOwner.lifecycleScope.launch {
+            val keys = withContext(Dispatchers.IO) { dao.getAll().map { it.toDomain().matchKey() }.toSet() }
+            if (isAdded && view != null) reminderAdapter.setTemplateKeys(keys)
+        }
+        publish()
+        if (!fromServer) return
+        ApiClient.getClient().create(ApiService::class.java).getTemplates()
+            .enqueue(object : Callback<TemplateResponse> {
+                override fun onResponse(call: Call<TemplateResponse>, response: Response<TemplateResponse>) {
+                    val server = response.body()?.templates ?: return
+                    if (!isAdded || view == null) return
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        withContext(Dispatchers.IO) { dao.replaceAll(server.map { it.toEntity() }) }
+                        publish()
+                    }
+                }
+
+                override fun onFailure(call: Call<TemplateResponse>, t: Throwable) {}
+            })
+    }
+
     private fun loadCachedReminders() {
+        refreshTemplateKeys(fromServer = false)
         viewLifecycleOwner.lifecycleScope.launch {
             val cached = withContext(Dispatchers.IO) {
                 db.reminderDao().getAll().map { it.toDomain() }
@@ -283,6 +308,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     // syncPendingReminders successfully uploads and removes them.
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                         db.reminderDao().replaceAll(serverReminders.map { it.toEntity() })
+                        withContext(Dispatchers.Main) { if (isAdded && view != null) refreshTemplateKeys(fromServer = true) }
                         val allVisible = db.reminderDao().getAll()
                             .map { it.toDomain() }
                             .sortedBy { it.Time }
