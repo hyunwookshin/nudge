@@ -216,6 +216,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
+        reminderAdapter.attachSwipeToDelete(recyclerView) { swiping -> swipeRefresh.isEnabled = !swiping }
         progressBar.visibility = View.VISIBLE
         db = AppDb.get(requireContext())
         loadCachedReminders()

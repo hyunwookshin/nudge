@@ -150,17 +150,6 @@
                 android:padding="10dp" />
 
             <ImageButton
-                android:id="@+id/deleteButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="4dp"
-                android:contentDescription="Delete"
-                android:src="@drawable/ic_delete"
-                app:tint="?attr/colorOnSurface"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="10dp" />
-
-            <ImageButton
                 android:id="@+id/linkButton"
                 android:layout_width="40dp"
                 android:layout_height="40dp"

@@ -3,6 +3,8 @@ package com.hyunwookshin.nudge
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.LayoutInflater
@@ -16,7 +18,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -75,6 +79,114 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         this.reminders = reminders // already sorted
         notifyDataSetChanged()
     }
+    /**
+     * Swipe a card left or right to delete it (replaces the trash button; the web client keeps its icon).
+     * One-off reminders disappear at once with an Undo snackbar, and the delete is only sent when the
+     * snackbar goes away. A recurring series removes every occurrence, so it still asks first.
+     */
+    fun attachSwipeToDelete(recyclerView: RecyclerView, onSwiping: (Boolean) -> Unit = {}) {
+        val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) = false
+
+            // past 35% of the card width deletes on release (default 50% feels heavy on a wide card)
+            override fun getSwipeThreshold(vh: RecyclerView.ViewHolder) = 0.35f
+
+            // while a card is being dragged, keep pull-to-refresh and other parents from stealing the
+            // gesture (a slightly downward swipe at the top of the list used to cancel it and snap back)
+            override fun onSelectedChanged(vh: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(vh, actionState)
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    recyclerView.parent?.requestDisallowInterceptTouchEvent(true)
+                    onSwiping(true)
+                }
+            }
+
+            override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) {
+                super.clearView(rv, vh)
+                onSwiping(false)
+            }
+
+            // same rule as the old trash button: no deleting while read-only or offline
+            override fun getSwipeDirs(rv: RecyclerView, vh: RecyclerView.ViewHolder): Int =
+                if (readOnly || isOfflineMode) 0 else super.getSwipeDirs(rv, vh)
+
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {
+                val position = vh.adapterPosition
+                if (position == RecyclerView.NO_POSITION) return
+                val reminder = reminders[position]
+                if (reminder.Id.matches(Regex(".*_r\\d+$"))) {
+                    confirmSeriesDelete(recyclerView, reminder, position)
+                    return
+                }
+                reminders = reminders.toMutableList().apply { removeAt(position) }
+                notifyItemRemoved(position)
+                Snackbar.make(recyclerView, "Reminder deleted", Snackbar.LENGTH_LONG)
+                    .setAction("Undo") {
+                        reminders = reminders.toMutableList().apply { add(minOf(position, size), reminder) }
+                        notifyItemInserted(position)
+                        recyclerView.scrollToPosition(position)
+                    }
+                    .addCallback(object : Snackbar.Callback() {
+                        override fun onDismissed(bar: Snackbar?, event: Int) {
+                            if (event != DISMISS_EVENT_ACTION) reminderCallback?.onDeleteReminder(reminder)
+                        }
+                    })
+                    .show()
+            }
+
+            override fun onChildDraw(
+                c: Canvas, rv: RecyclerView, vh: RecyclerView.ViewHolder,
+                dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
+            ) {
+                val item = vh.itemView
+                if (dX != 0f) {
+                    // red rounded background (matches the 12dp card) with a white trash icon on the uncovered side
+                    val density = rv.resources.displayMetrics.density
+                    val background = GradientDrawable().apply {
+                        cornerRadius = 12f * density
+                        setColor(Color.parseColor("#E53935"))
+                    }
+                    background.setBounds(item.left, item.top, item.right, item.bottom)
+                    c.save()
+                    if (dX > 0) c.clipRect(item.left.toFloat(), item.top.toFloat(), item.left + dX, item.bottom.toFloat())
+                    else c.clipRect(item.right + dX, item.top.toFloat(), item.right.toFloat(), item.bottom.toFloat())
+                    background.draw(c)
+                    ContextCompat.getDrawable(rv.context, R.drawable.ic_delete)?.mutate()?.let { icon ->
+                        icon.setTint(Color.WHITE)
+                        val inset = (24 * density).toInt()
+                        val top = item.top + (item.height - icon.intrinsicHeight) / 2
+                        val left = if (dX > 0) item.left + inset else item.right - inset - icon.intrinsicWidth
+                        icon.setBounds(left, top, left + icon.intrinsicWidth, top + icon.intrinsicHeight)
+                        icon.draw(c)
+                    }
+                    c.restore()
+                }
+                super.onChildDraw(c, rv, vh, dX, dY, actionState, isCurrentlyActive)
+            }
+        }
+        ItemTouchHelper(callback).attachToRecyclerView(recyclerView)
+    }
+
+    private fun confirmSeriesDelete(recyclerView: RecyclerView, reminder: Reminder, position: Int) {
+        val context = recyclerView.context
+        val series = reminder.copy(Id = reminder.Id.replace(Regex("_r\\d+$"), ""))
+        var deleting = false
+        val dialog = MaterialAlertDialogBuilder(context, R.style.RoundedMaterialDialog)
+            .setTitle("Delete recurring series?")
+            .setMessage("This will remove all occurrences of this reminder. This can’t be undone.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                deleting = true
+                reminderCallback?.onDeleteReminder(series)
+            }
+            .setOnDismissListener { if (!deleting) notifyItemChanged(position) }  // slide the card back
+            .show()
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            .setTextColor(Color.parseColor("#E53935"))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+            .setTextColor(ContextCompat.getColor(context, R.color.colorTextPrimary))
+    }
+
     fun setReminderCallback(callback: ReminderCallback) {
         this.reminderCallback = callback
     }
@@ -123,7 +235,6 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val id: TextView = itemView.findViewById(R.id.id)
         private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
         private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
-        private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
         private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
         private val accentBar: View = itemView.findViewById(R.id.accentBar)
         private val contextIcon: ImageView = itemView.findViewById(R.id.contextIcon)
@@ -177,48 +288,18 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             if (readOnly) {
                 editButton.visibility = View.GONE
                 copyButton.visibility = View.GONE
-                deleteButton.visibility = View.GONE
             } else if (isOfflineMode) {
                 editButton.visibility = if (isVirtual) View.GONE else View.VISIBLE
                 copyButton.visibility = View.GONE
-                deleteButton.visibility = View.GONE
             } else {
                 editButton.visibility = if (isVirtual) View.GONE else View.VISIBLE
                 copyButton.visibility = View.VISIBLE
-                deleteButton.visibility = View.VISIBLE
             }
             editButton.setOnClickListener {
                 reminderCallback?.onEditReminder(reminder, isOfflineMode)
             }
             copyButton.setOnClickListener {
                 reminderCallback?.onCopyReminder(reminder)
-            }
-            deleteButton.setOnClickListener {
-                val title: String
-                val message: String
-                val reminderToDelete: Reminder
-                if (isVirtual) {
-                    val baseId = reminder.Id.replace(Regex("_r\\d+$"), "")
-                    reminderToDelete = reminder.copy(Id = baseId)
-                    title = "Delete recurring series?"
-                    message = "This will remove all occurrences of this reminder. This can’t be undone."
-                } else {
-                    reminderToDelete = reminder
-                    title = "Delete reminder?"
-                    message = "This can’t be undone."
-                }
-                val dialog = MaterialAlertDialogBuilder(itemView.context, R.style.RoundedMaterialDialog)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Delete") { _, _ ->
-                        reminderCallback?.onDeleteReminder(reminderToDelete)
-                    }
-                    .show()
-                dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
-                    .setTextColor(android.graphics.Color.parseColor("#E53935"))
-                dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
-                    .setTextColor(ContextCompat.getColor(itemView.context, R.color.colorTextPrimary))
             }
             val link = reminder.Link
             if (!link.isNullOrBlank()) {
@@ -244,7 +325,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             actionRow.setBackgroundColor(ColorUtils.setAlphaComponent(accentColor, 0x14))
             actionRow.visibility =
-                if (listOf(editButton, copyButton, deleteButton, linkButton, countdown).any { it.visibility == View.VISIBLE })
+                if (listOf(editButton, copyButton, linkButton, countdown).any { it.visibility == View.VISIBLE })
                     View.VISIBLE else View.GONE
 
             // For updating the mini calendar anchored to the reminder
