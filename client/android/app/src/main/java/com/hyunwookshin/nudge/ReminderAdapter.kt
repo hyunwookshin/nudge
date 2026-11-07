@@ -315,7 +315,9 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             // events inside a project are indented a little and name the project
             val member = !reminder.isProject && reminder.ParentId.isNotBlank() && mode == Mode.LIST
             val margins = itemView.layoutParams as ViewGroup.MarginLayoutParams
-            margins.marginStart = ((if (member) 32 else 16) * itemView.resources.displayMetrics.density).toInt()
+            // on a project's own page every event is indented, to set it apart from the details card above
+            val indented = member || mode == Mode.PROJECT_EVENTS
+            margins.marginStart = ((if (indented) 32 else 16) * itemView.resources.displayMetrics.density).toInt()
             itemView.layoutParams = margins
             val parentTitle = projectTitles[reminder.ParentId]
             projectTag.visibility = if (member && parentTitle != null) View.VISIBLE else View.GONE
