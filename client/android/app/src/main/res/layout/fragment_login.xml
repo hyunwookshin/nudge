@@ -5,7 +5,7 @@
     android:id="@+id/loginRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_login_gradient"
+    android:background="@drawable/bg_auth"
     android:padding="24dp">
 
     <!-- Logo -->
@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:text="Username"
                 android:textSize="13sp"
-                android:textColor="#2196F3"
+                android:textColor="#1F2937"
                 android:layout_marginBottom="8dp"/>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -90,7 +90,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="filled"
-                app:boxBackgroundColor="#AAE5FF"
+                app:boxBackgroundColor="#F2E8FBFF"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
@@ -117,7 +117,7 @@
                 android:layout_height="wrap_content"
                 android:text="Password"
                 android:textSize="13sp"
-                android:textColor="#2196F3"
+                android:textColor="#1F2937"
                 android:layout_marginBottom="8dp"/>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -126,7 +126,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="filled"
-                app:boxBackgroundColor="#AAE5FF"
+                app:boxBackgroundColor="#F2E8FBFF"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
@@ -154,6 +154,8 @@
                 android:layout_height="50dp"
                 android:text="Log in"
                 android:textAllCaps="false"
+                android:backgroundTint="#0B6B6B"
+                android:textColor="@android:color/white"
                 android:textStyle="bold"
                 app:cornerRadius="16dp"/>
 
