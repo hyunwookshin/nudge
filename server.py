@@ -145,6 +145,15 @@ def get_reminders():
             r.time = r.time.astimezone(timezone(offset))
             r.read = r.read.astimezone(timezone(offset))
 
+    parent = request.args.get("parent")
+    if parent:
+        # one project's page: the project itself and every event in it, past or future
+        proj = next((r for r in reminders if r.id == parent and r.is_project()), None)
+        if proj is None:
+            return jsonify({"message": project.NO_SUCH_PROJECT}), 404
+        members = sorted((r for r in reminders if r.parent_id == parent), key=lambda r: r.time)
+        return jsonify({ "project": proj.toInfo(), "reminders": [ r.toInfo() for r in members ] }), 200
+
     if request.args.get("kind") == reminder.KIND_PROJECT:
         # the Projects page: every project, past and future
         projects = sorted((r for r in reminders if r.is_project()), key=lambda r: r.time)
