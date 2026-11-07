@@ -28,6 +28,18 @@ CREATE TABLE IF NOT EXISTS reminders (
     INDEX idx_username (username),
     INDEX idx_time     (time)
 );
+
+CREATE TABLE IF NOT EXISTS templates (
+    id           VARCHAR(32)  NOT NULL,
+    username     VARCHAR(255) NOT NULL,
+    title        TEXT         NOT NULL,
+    description  TEXT         NOT NULL,
+    link         TEXT         NOT NULL DEFAULT '',
+    priority     TINYINT      NOT NULL DEFAULT 2,
+
+    PRIMARY KEY (id, username),
+    INDEX idx_username (username)
+);
 EOF
 
 echo "Done."

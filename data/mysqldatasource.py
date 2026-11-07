@@ -1,10 +1,12 @@
+import os
 import pymysql
 import pymysql.cursors
 
 from models import reminder
+from models import template
 from auth import crypto_utils
 
-HOST = "nudge.cmqx6tpknayx.us-east-2.rds.amazonaws.com"
+HOST = os.getenv("NUDGE_MYSQL_HOST", "nudge.cmqx6tpknayx.us-east-2.rds.amazonaws.com")
 DB   = "nudge"
 
 
@@ -94,11 +96,63 @@ class MySQLDataSource:
         finally:
             conn.close()
 
+    def loadTemplates(self):
+        conn = _connect(self.db_user, self.db_password)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id, title, description, link, priority "
+                    "FROM templates WHERE username = %s",
+                    (self.user,),
+                )
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        results = []
+        for row in rows:
+            info = self._template_row_to_info(row)
+            if self.encrypt:
+                info = crypto_utils.decrypt_reminder_fields(info, self.password_hash)
+            results.append(template.Template(info))
+        return results
+
+    def storeTemplates(self, templates):
+        conn = _connect(self.db_user, self.db_password)
+        try:
+            with conn.cursor() as cur:
+                # Replace all rows for this user atomically.
+                cur.execute("DELETE FROM templates WHERE username = %s", (self.user,))
+                for t in templates:
+                    info = t.toInfo()
+                    if self.encrypt:
+                        info = crypto_utils.encrypt_reminder_fields(info, self.password_hash)
+                    cur.execute(
+                        "INSERT INTO templates "
+                        "  (id, username, title, description, link, priority) "
+                        "VALUES (%s, %s, %s, %s, %s, %s)",
+                        (
+                            info["Id"],
+                            self.user,
+                            info["Title"],
+                            info["Description"],
+                            info["Link"],
+                            info["Priority"],
+                        ),
+                    )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def deleteUser(self):
         conn = _connect(self.db_user, self.db_password)
         try:
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM reminders WHERE username = %s", (self.user,))
+                cur.execute("DELETE FROM templates WHERE username = %s", (self.user,))
             conn.commit()
         except Exception:
             conn.rollback()
@@ -125,4 +179,14 @@ class MySQLDataSource:
             "Closed":      bool(row["closed"]),
             "Snooze":      row["snooze"],
             "Repeat":      row["repeat_days"],
+        }
+
+    def _template_row_to_info(self, row):
+        """Convert a DictCursor row to the info dict shape Template.__init__ expects."""
+        return {
+            "Id":          row["id"],
+            "Title":       row["title"],
+            "Description": row["description"],
+            "Link":        row["link"],
+            "Priority":    row["priority"],
         }

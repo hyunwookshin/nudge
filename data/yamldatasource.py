@@ -4,10 +4,12 @@ import yaml
 import hashlib
 
 from models import reminder
+from models import template
 
 from auth import crypto_utils
 
 FILE_NAME = "reminders.yaml"
+TEMPLATE_FILE_NAME = "templates.yaml"
 
 def derive_key_from_hash(password_hash: str) -> bytes:
      return hashlib.sha256(password_hash.encode("utf-8")).digest()
@@ -21,15 +23,20 @@ class YamlDataSource:
         self.encrypt = encrypt
         self.password_hash = derive_key_from_hash(password_hash)
 
-    def getYamlReminderPath(self):
+    def getYamlUserPath(self, file_name):
         base = self.config.getStorePath()
         user_dir = os.path.join(base, "users")
         user_dir = os.path.join(user_dir, self.user)
         os.makedirs(user_dir, exist_ok=True)
-        return os.path.join(user_dir, FILE_NAME)
+        return os.path.join(user_dir, file_name)
 
-    def loadReminders(self):
-        path = self.getYamlReminderPath()
+    def getYamlReminderPath(self):
+        return self.getYamlUserPath(FILE_NAME)
+
+    def getYamlTemplatePath(self):
+        return self.getYamlUserPath(TEMPLATE_FILE_NAME)
+
+    def readInfos(self, path):
         if not os.path.exists(path):
             return []
 
@@ -41,40 +48,35 @@ class YamlDataSource:
         if self.encrypt:
             if not self.password_hash:
                 raise ValueError("password_hash required when encrypt=True")
+            infos = [crypto_utils.decrypt_reminder_fields(info, self.password_hash)
+                     if isinstance(info, dict) else info for info in infos]
+        return infos
 
-            decrypted_infos = []
-            for info in infos:
-                if isinstance(info, dict):
-                    info = crypto_utils.decrypt_reminder_fields(info, self.password_hash)
-                decrypted_infos.append(info)
-            infos = decrypted_infos
-
-        return [reminder.Reminder(info) for info in infos]
-
-    def storeReminders(self, reminders):
-        reminders = reminders[::-1]
-        filtered = []
-        for r in reminders:
-            filtered.append(r)
-        reminders = filtered[::-1]
-
-        infos = [r.toInfo() for r in reminders]
-
+    def writeInfos(self, path, infos):
         # Field-level encrypt (only if encrypt=True)
         if self.encrypt:
             if not self.password_hash:
                 raise ValueError("password_hash required when encrypt=True")
+            infos = [crypto_utils.encrypt_reminder_fields(info, self.password_hash)
+                     if isinstance(info, dict) else info for info in infos]
 
-            encrypted_infos = []
-            for info in infos:
-                if isinstance(info, dict):
-                    info = crypto_utils.encrypt_reminder_fields(info, self.password_hash)
-                encrypted_infos.append(info)
-            infos = encrypted_infos
-
-        with open(self.getYamlReminderPath(), "w") as f:
+        with open(path, "w") as f:
             text = yaml.safe_dump(infos, default_flow_style=False, indent=4)
             f.write(text.strip())
+
+    def loadReminders(self):
+        infos = self.readInfos(self.getYamlReminderPath())
+        return [reminder.Reminder(info) for info in infos]
+
+    def storeReminders(self, reminders):
+        self.writeInfos(self.getYamlReminderPath(), [r.toInfo() for r in reminders])
+
+    def loadTemplates(self):
+        infos = self.readInfos(self.getYamlTemplatePath())
+        return [template.Template(info) for info in infos]
+
+    def storeTemplates(self, templates):
+        self.writeInfos(self.getYamlTemplatePath(), [t.toInfo() for t in templates])
 
     def deleteUser(self):
         user_dir = os.path.join(self.config.getStorePath(), "users", self.user)

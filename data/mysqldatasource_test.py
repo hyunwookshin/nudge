@@ -9,6 +9,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models import reminder
+from models import template
 from data import mysqldatasource
 
 
@@ -140,9 +141,12 @@ class TestMySQLDataSource(unittest.TestCase):
 
         self.ds.deleteUser()
 
-        sql, params = mock_cur.execute.call_args[0]
-        self.assertIn("DELETE", sql)
-        self.assertEqual(params, ("alice",))
+        calls = mock_cur.execute.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn("FROM reminders", calls[0][0][0])
+        self.assertIn("FROM templates", calls[1][0][0])
+        for call in calls:
+            self.assertEqual(call[0][1], ("alice",))
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
 
@@ -177,6 +181,71 @@ class TestMySQLDataSource(unittest.TestCase):
         self.assertEqual(info["Snooze"],      0)
         self.assertEqual(info["Repeat"],      0)
 
+
+    # ------------------------------------------------------------------
+    # templates
+    # ------------------------------------------------------------------
+
+    @patch("data.mysqldatasource._connect")
+    def test_loadTemplates(self, mock_connect):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value.fetchall.return_value = [
+            {"id": "t1", "title": "Haircut", "description": "Monthly trim",
+             "link": "http://example.com", "priority": 1}]
+
+        templates = self.ds.loadTemplates()
+
+        self.assertEqual(len(templates), 1)
+        self.assertEqual(templates[0].id, "t1")
+        self.assertEqual(templates[0].title, "Haircut")
+        self.assertEqual(templates[0].priority, 1)
+        mock_conn.close.assert_called_once()
+
+    @patch("data.mysqldatasource._connect")
+    def test_loadTemplates_empty(self, mock_connect):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value.fetchall.return_value = []
+
+        self.assertEqual(self.ds.loadTemplates(), [])
+        mock_conn.close.assert_called_once()
+
+    @patch("data.mysqldatasource._connect")
+    def test_storeTemplates(self, mock_connect):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_cur = mock_conn.cursor.return_value.__enter__.return_value
+
+        t = template.Template({"Id": "t1", "Title": "Haircut", "Description": "Monthly trim",
+                               "Link": "", "Priority": 2})
+        self.ds.storeTemplates([t])
+
+        calls = mock_cur.execute.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn("DELETE FROM templates", calls[0][0][0])
+        self.assertIn("INSERT INTO templates", calls[1][0][0])
+        self.assertEqual(calls[1][0][1], ("t1", "alice", "Haircut", "Monthly trim", "", 2))
+        mock_conn.commit.assert_called_once()
+        mock_conn.close.assert_called_once()
+
+    @patch("data.mysqldatasource._connect")
+    def test_storeTemplates_rollback_on_error(self, mock_connect):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value.execute.side_effect = Exception("DB error")
+
+        with self.assertRaises(Exception):
+            self.ds.storeTemplates([template.Template({"Title": "a", "Description": "b"})])
+
+        mock_conn.rollback.assert_called_once()
+        mock_conn.close.assert_called_once()
+
+    def test_template_row_to_info(self):
+        info = self.ds._template_row_to_info(
+            {"id": "t1", "title": "Haircut", "description": "Monthly trim", "link": "", "priority": 3})
+        self.assertEqual(info, {"Id": "t1", "Title": "Haircut", "Description": "Monthly trim",
+                                "Link": "", "Priority": 3})
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import yaml
 
 from models import reminder
+from models import template
 from data import yamldatasource
 
 # Sample reminder data in YAML format
@@ -38,6 +39,8 @@ class TestYamlDataSource(unittest.TestCase):
         if os.path.exists(user_dir):
             with open(user_dir + "/reminders.yaml", "w") as f:
                 f.write('')
+            if os.path.exists(user_dir + "/templates.yaml"):
+                os.remove(user_dir + "/templates.yaml")
 
     def test_loadReminders(self):
         # Test loading reminders from YAML data
@@ -91,6 +94,31 @@ class TestYamlDataSource(unittest.TestCase):
 
         user_dir = self.config.getStorePath() + "/users/test_user"
         self.assertFalse(os.path.exists(user_dir))
+
+    def test_loadTemplates_missing_file(self):
+        self.assertEqual(self.data_source.loadTemplates(), [])
+
+    def test_storeTemplates(self):
+        t = template.Template({"Title": "Haircut", "Description": "Monthly trim",
+                               "Link": "http://example.com", "Priority": 1})
+        self.data_source.storeTemplates([t])
+
+        templates = self.data_source.loadTemplates()
+        self.assertEqual(len(templates), 1)
+        self.assertEqual(templates[0].title, "Haircut")
+        self.assertEqual(templates[0].description, "Monthly trim")
+        self.assertEqual(templates[0].link, "http://example.com")
+        self.assertEqual(templates[0].priority, 1)
+        self.assertEqual(templates[0].id, t.id)
+
+    def test_storeTemplates_encrypted(self):
+        ds = yamldatasource.YamlDataSource(self.config, "test_user", True, "hash")
+        ds.storeTemplates([template.Template({"Title": "Haircut", "Description": "Monthly trim",
+                                              "Link": "", "Priority": 2})])
+        with open(self.config.getStorePath() + "/users/test_user/templates.yaml") as f:
+            raw = f.read()
+        self.assertNotIn("Haircut", raw)
+        self.assertEqual(ds.loadTemplates()[0].title, "Haircut")
 
 if __name__ == "__main__":
     unittest.main()

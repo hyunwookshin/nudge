@@ -13,7 +13,19 @@ class DataSource:
         pass
 
     '''
-    Deletes all data for the user (reminders directory)
+    Returns a list of Templates
+    '''
+    def loadTemplates(self):
+        pass
+
+    '''
+    Saves the list of templates
+    '''
+    def storeTemplates(self, templates):
+        pass
+
+    '''
+    Deletes all data for the user (reminders and templates)
     '''
     def deleteUser(self):
         pass

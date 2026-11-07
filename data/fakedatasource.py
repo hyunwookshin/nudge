@@ -14,12 +14,20 @@ class FakeDataSource:
 
     def __init__(self, config):
         self.reminders = [ reminder.Reminder(sample_yaml_data) ]
+        self.templates = []
 
     def loadReminders(self):
-        return self.reminders()
+        return self.reminders
 
     def storeReminders(self, reminders):
         self.reminders = reminders
 
+    def loadTemplates(self):
+        return self.templates
+
+    def storeTemplates(self, templates):
+        self.templates = templates
+
     def deleteUser(self):
         self.reminders = []
+        self.templates = []

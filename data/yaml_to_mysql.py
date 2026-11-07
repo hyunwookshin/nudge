@@ -86,10 +86,12 @@ def migrate(store_path, auth_path, dry_run):
         )
 
         reminders = yaml_src.loadReminders()
-        print(f"  {username}: {len(reminders)} reminder(s)", end="")
+        templates = yaml_src.loadTemplates()
+        print(f"  {username}: {len(reminders)} reminder(s), {len(templates)} template(s)", end="")
 
         if not dry_run:
             sql_dst.storeReminders(reminders)
+            sql_dst.storeTemplates(templates)
             print(" — copied")
         else:
             print(" — skipped (dry-run)")
