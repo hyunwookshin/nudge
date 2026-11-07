@@ -2,8 +2,7 @@ package com.hyunwookshin.nudge
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.LayoutInflater
@@ -12,9 +11,11 @@ import android.view.ViewGroup
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
@@ -60,6 +61,14 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         } else {
             ""
         }
+    }
+
+    private fun compactTime(time24: String): String {
+        val date = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).parse(time24) ?: return ""
+        val sameYear = Calendar.getInstance().get(Calendar.YEAR) ==
+            Calendar.getInstance().apply { time = date }.get(Calendar.YEAR)
+        val pattern = if (sameYear) "EEE, MMM d · h:mm a" else "EEE, MMM d, yyyy · h:mm a"
+        return SimpleDateFormat(pattern, Locale.getDefault()).format(date)
     }
 
     fun setReminders(reminders: List<Reminder>) {
@@ -116,12 +125,15 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
         private val linkButton: ImageButton = itemView.findViewById(R.id.linkButton)
+        private val accentBar: View = itemView.findViewById(R.id.accentBar)
+        private val contextIcon: ImageView = itemView.findViewById(R.id.contextIcon)
+        private val actionRow: View = itemView.findViewById(R.id.actionRow)
 
         fun bind(reminder: Reminder, readOnly: Boolean) {
             title.text = reminder.Title
             pendingBadge.visibility = if (reminder.isPending) View.VISIBLE else View.GONE
             description.text = reminder.Description
-            time.text = convert24HourTo12Hour(reminder.Time)
+            time.text = compactTime(reminder.Time)
             val d = daysUntil(reminder.Time)
             if (d != null && d in 0..13) {
                 countdown.visibility = View.VISIBLE
@@ -142,11 +154,25 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             } else {
                 read.text = "Verified: " + convert24HourTo12Hour(reminder.Read)
             }
-            val backgroundColor = if (reminder.Priority <= 1) {
-                ContextCompat.getColor(itemView.context, R.color.high_priority)
+            val accentColor = ContextCompat.getColor(
+                itemView.context,
+                if (reminder.Priority <= 1) R.color.high_priority_accent else R.color.low_priority_accent
+            )
+            accentBar.setBackgroundColor(accentColor)
+
+            val iconRes = contextIconFor(reminder)
+            if (iconRes != null) {
+                contextIcon.setImageResource(iconRes)
+                contextIcon.imageTintList = ColorStateList.valueOf(accentColor)
+                contextIcon.background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(ColorUtils.setAlphaComponent(accentColor, 0x33))
+                }
+                contextIcon.visibility = View.VISIBLE
             } else {
-                ContextCompat.getColor(itemView.context, R.color.low_priority)
+                contextIcon.visibility = View.GONE
             }
+
             val isVirtual = reminder.Id.matches(Regex(".*_r\\d+$"))
             if (readOnly) {
                 editButton.visibility = View.GONE
@@ -205,17 +231,21 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
                 linkButton.visibility = View.GONE
                 linkButton.setOnClickListener(null)
             }
-            val isDarkMode = (itemView.context.resources.configuration.uiMode and
-                    Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            val strokeColor = adjustBrightness(backgroundColor, isDarkMode)
-            val density = itemView.context.resources.displayMetrics.density
-            val drawable = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
+            val ctx = itemView.context
+            val density = ctx.resources.displayMetrics.density
+            cardRoot.background = GradientDrawable().apply {
                 cornerRadius = 12f * density
-                setColor(backgroundColor)
-                setStroke((density + 0.5f).toInt(), strokeColor)
+                setColor(ContextCompat.getColor(ctx, R.color.card_surface))
+                setStroke((density + 0.5f).toInt(), ContextCompat.getColor(ctx, R.color.card_stroke))
             }
-            cardRoot.background = drawable
+            time.background = GradientDrawable().apply {
+                cornerRadius = 100f * density
+                setColor(ColorUtils.setAlphaComponent(accentColor, 0x2E))
+            }
+            actionRow.setBackgroundColor(ColorUtils.setAlphaComponent(accentColor, 0x14))
+            actionRow.visibility =
+                if (listOf(editButton, copyButton, deleteButton, linkButton, countdown).any { it.visibility == View.VISIBLE })
+                    View.VISIBLE else View.GONE
 
             // For updating the mini calendar anchored to the reminder
             itemView.setOnClickListener {
@@ -229,25 +259,35 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         }
     }
 
-    private fun adjustBrightness(color: Int, lighten: Boolean): Int {
-        val r = Color.red(color)
-        val g = Color.green(color)
-        val b = Color.blue(color)
-        return if (lighten) {
-            val factor = 0.30f
-            Color.rgb(
-                (r + (255 - r) * factor).toInt(),
-                (g + (255 - g) * factor).toInt(),
-                (b + (255 - b) * factor).toInt()
-            )
-        } else {
-            val factor = 0.20f
-            Color.rgb(
-                (r * (1f - factor)).toInt(),
-                (g * (1f - factor)).toInt(),
-                (b * (1f - factor)).toInt()
-            )
+    private val contextIconRules: List<Pair<Set<String>, Int>> = listOf(
+        setOf("flight", "flights", "airport", "fly", "flying", "trip") to R.drawable.ic_ctx_flight,
+        setOf("car", "dmv", "drive", "driving", "roadtrip") to R.drawable.ic_ctx_car,
+        setOf("dentist", "dental") to R.drawable.ic_ctx_tooth,
+        setOf("eye", "eyes", "optometry", "optometrist") to R.drawable.ic_ctx_eye,
+        setOf("dinner", "lunch") to R.drawable.ic_ctx_restaurant,
+        setOf("coffee", "cafe", "café") to R.drawable.ic_ctx_cafe,
+        setOf("presentation", "talk", "seminar", "conference") to R.drawable.ic_ctx_laptop,
+        setOf("meeting", "meet", "friend", "friends") to R.drawable.ic_ctx_people,
+        setOf("phone", "mentor", "mentoring", "call") to R.drawable.ic_ctx_call,
+        setOf("submit", "application", "apply", "form") to R.drawable.ic_ctx_description,
+        setOf("property") to R.drawable.ic_ctx_home,
+        setOf("clothes", "clothing", "laundry") to R.drawable.ic_ctx_tshirt,
+        setOf("hotel", "stay") to R.drawable.ic_ctx_hotel,
+        setOf("reservation", "reservations") to R.drawable.ic_ctx_reservation,
+        setOf("lesson", "lessons") to R.drawable.ic_ctx_lesson,
+    )
+
+    // Title wins over description so a stray word in the notes doesn't override the headline.
+    private fun contextIconFor(reminder: Reminder): Int? {
+        for (text in listOf(reminder.Title, reminder.Description)) {
+            val words = text.lowercase()
+                .replace(Regex("road\\s+trip"), "roadtrip")
+                .split(Regex("[^\\p{L}]+"))
+                .toSet()
+            contextIconRules.firstOrNull { (keys, _) -> keys.any(words::contains) }
+                ?.let { return it.second }
         }
+        return null
     }
 
     private fun copyReminderToClipboard(context: Context, r: Reminder) {

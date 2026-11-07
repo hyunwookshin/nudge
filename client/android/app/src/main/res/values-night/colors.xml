@@ -10,4 +10,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="high_priority">#713B40</color>
     <color name="low_priority">#333232</color>
+    <color name="high_priority_accent">#FF8F9C</color>
+    <color name="low_priority_accent">#9E9E9E</color>
+    <color name="card_surface">#1E1E20</color>
+    <color name="card_stroke">#2E2E31</color>
 </resources>
