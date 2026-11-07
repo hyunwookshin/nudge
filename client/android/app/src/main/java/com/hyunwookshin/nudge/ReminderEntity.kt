@@ -16,6 +16,10 @@ data class ReminderEntity(
     val read: String,
     val isPending: Boolean = false,
     val pendingKey: String = "",
+    val kind: String = "event",
+    val endDate: String = "",
+    val projectType: String = "",
+    val parentId: String = "",
 )
 
 // Entity -> Domain
@@ -31,6 +35,10 @@ fun ReminderEntity.toDomain(): Reminder = Reminder(
     Snooze = snooze,
     Read = read,
     isPending = isPending,
+    Kind = kind,
+    EndDate = endDate,
+    ProjectType = projectType,
+    ParentId = parentId,
 )
 
 // Domain -> Entity
@@ -46,4 +54,8 @@ fun Reminder.toEntity(): ReminderEntity = ReminderEntity(
     read = Read,
     isPending = false,
     pendingKey = "",
+    kind = Kind,
+    endDate = EndDate,
+    projectType = ProjectType,
+    parentId = ParentId,
 )

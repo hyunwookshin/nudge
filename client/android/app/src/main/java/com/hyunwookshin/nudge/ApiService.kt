@@ -23,6 +23,8 @@ data class ChangePasswordRequest(
 
 data class MessageResponse(val message: String)
 
+data class SetProjectRequest(val Id: String, val ParentId: String)
+
 interface ApiService {
     @POST("/login")
     fun login(@Body req: LoginRequest): Call<LoginResponse>
@@ -40,7 +42,14 @@ interface ApiService {
     fun addReminderAI(@Body req: AddReminderAiRequest): Call<AddReminderAiResponse>
 
     @GET("/reminders")
-    fun getReminders(@Query("include") include: Int? = null): Call<ReminderResponse>
+    fun getReminders(
+        @Query("include") include: Int? = null,
+        @Query("kind") kind: String? = null,   // "project": every project, for the Projects page
+    ): Call<ReminderResponse>
+
+    /** Adds an event to a project (empty ParentId removes it); the server checks the date range. */
+    @POST("/set_project")
+    fun setProject(@Body req: SetProjectRequest): Call<MessageResponse>
 
     @GET("/templates")
     fun getTemplates(): Call<TemplateResponse>

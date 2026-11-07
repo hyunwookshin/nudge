@@ -57,6 +57,15 @@ object CardStyle {
         R.drawable.ic_ctx_lesson to listOf(R.drawable.art_lesson_book, R.drawable.art_pen, R.drawable.art_lesson_cap, R.drawable.art_lesson_apple),
     )
 
+    /** Category icon for a card: a project uses its type, an event its keywords. */
+    fun iconFor(reminder: Reminder): Int? =
+        if (reminder.isProject) ProjectTypes.iconFor(reminder.ProjectType)
+        else contextIconFor(reminder.Title, reminder.Description)
+
+    /** Accent for a card; a project without a color of its type is gray (priority is shown on the date chip). */
+    fun accentFor(context: Context, reminder: Reminder, iconRes: Int?): Int =
+        accentColor(context, iconRes, if (reminder.isProject) 2 else reminder.Priority)
+
     // Title wins over description so a stray word in the notes doesn't override the headline.
     fun contextIconFor(title: String, description: String): Int? {
         for (text in listOf(title, description)) {

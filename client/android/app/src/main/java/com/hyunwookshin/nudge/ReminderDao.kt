@@ -12,6 +12,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY time ASC")
     suspend fun getAll(): List<ReminderEntity>
 
+    @Query("SELECT * FROM reminders WHERE kind = 'project' ORDER BY time ASC")
+    suspend fun getProjects(): List<ReminderEntity>
+
     @Query("SELECT * FROM reminders WHERE isPending = 1 ORDER BY time ASC")
     suspend fun getPending(): List<ReminderEntity>
 
