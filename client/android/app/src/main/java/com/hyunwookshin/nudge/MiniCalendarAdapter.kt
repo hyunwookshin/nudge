@@ -16,6 +16,18 @@ class MiniCalendarAdapter(
 ) : RecyclerView.Adapter<MiniCalendarAdapter.VH>() {
 
     private var days: List<DayState> = emptyList()
+    // project spans, drawn as bands by ProjectBandDecoration (earlier start first = drawn first)
+    var bands: List<ProjectBand> = emptyList()
+        private set
+
+    fun setBands(bands: List<ProjectBand>) {
+        if (bands == this.bands) return
+        this.bands = bands
+        notifyDataSetChanged()
+    }
+
+    fun dayDates(): List<LocalDate> = days.map { it.date }
+
     // date of the selected reminder card, ringed in that card's accent color
     private var selectedDate: LocalDate? = null
     private var selectedColor: Int = 0

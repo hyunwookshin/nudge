@@ -172,6 +172,30 @@
                     android:text="Time" />
             </LinearLayout>
 
+            <!-- only for projects: when it ends, and what kind it is (color and icon) -->
+            <LinearLayout
+                android:id="@+id/projectFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/endDateButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_corner"
+                    android:layout_margin="4dp"
+                    android:textAllCaps="false"
+                    android:text="End date" />
+
+                <Spinner
+                    android:id="@+id/projectTypeSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp" />
+            </LinearLayout>
+
             <EditText
                 android:id="@+id/idEditText"
                 android:layout_width="match_parent"

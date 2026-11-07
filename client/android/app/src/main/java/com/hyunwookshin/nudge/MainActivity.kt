@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity(), ReminderCallback, LoginFragment.LoginC
         // clearing the id forces new instance, instead of updating
         // the old instance.
         reminder.Id = ""
+        reminder.ParentId = ""   // a copy doesn't join the original's project by itself
         onEditReminder(reminder)
     }
 

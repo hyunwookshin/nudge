@@ -35,7 +35,8 @@ object ReminderNotifier {
 
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val title = "Reminder in $whenLabel: ${r.Title}"
+        val what = if (r.isProject) "${r.Title} begins" else r.Title
+        val title = "Reminder in $whenLabel: $what"
         val body = buildString {
             append(r.Description)
             if (r.Link.isNotBlank()) {

@@ -44,6 +44,13 @@ class ReminderFragment : Fragment() {
     private lateinit var repeatSpinner: Spinner
     private lateinit var saveButton: Button
     private lateinit var saveTemplateButton: Button
+    private lateinit var projectFields: View
+    private lateinit var endDateButton: Button
+    private lateinit var projectTypeSpinner: Spinner
+    private var selectedEndDate: String? = null       // yyyy-MM-dd, projects only
+    // The reminder being edited. Its project fields (kind, project link, ...) must survive the
+    // save, because the form only shows some of them.
+    private var editing: Reminder? = null
     // Template.matchKey() of every saved template: Save as Template stays off while the form matches one
     private val templateKeys = mutableSetOf<String>()
     private lateinit var passwordEditText: EditText
@@ -226,6 +233,10 @@ class ReminderFragment : Fragment() {
         dateButton.setOnClickListener { showDatePicker() }
         timeButton.setOnClickListener { showTimePicker() }
         saveButton.setOnClickListener { saveReminder() }
+        projectFields = view.findViewById(R.id.projectFields)
+        endDateButton = view.findViewById(R.id.endDateButton)
+        projectTypeSpinner = view.findViewById(R.id.projectTypeSpinner)
+        endDateButton.setOnClickListener { pickEndDate() }
         saveTemplateButton = view.findViewById(R.id.saveTemplateButton)
         saveTemplateButton.setOnClickListener { saveAsTemplate() }
 
@@ -274,6 +285,8 @@ class ReminderFragment : Fragment() {
                 else -> 0
             })
             idEditText.setText(it.Id)
+            editing = it
+            if (it.isProject) setupProjectEditing(it)
 
             //  Parse existing reminder time and set date/time buttons + internal state
             // Expecting it.Time like "yyyy-MM-dd HH:mm"
@@ -395,6 +408,28 @@ class ReminderFragment : Fragment() {
         inputMethodManager.hideSoftInputFromWindow(view?.windowToken, 0)
     }
 
+    /** Project mode of the editor: end date and type fields, no repeat, no "Save as Template". */
+    private fun setupProjectEditing(p: Reminder) {
+        projectFields.visibility = View.VISIBLE
+        repeatSpinner.visibility = View.GONE
+        saveTemplateButton.visibility = View.GONE
+        pageTitle.text = if (p.Title.isBlank()) "New Project" else "${p.Title} begins"
+        selectedEndDate = p.EndDate.ifBlank { null }
+        endDateButton.text = selectedEndDate ?: "End date"
+        projectTypeSpinner.adapter = ArrayAdapter(
+            requireContext(), android.R.layout.simple_spinner_dropdown_item, ProjectTypes.all.map { it.label })
+        projectTypeSpinner.setSelection(ProjectTypes.all.indexOfFirst { it.key == p.ProjectType }.coerceAtLeast(0))
+    }
+
+    private fun pickEndDate() {
+        val base = runCatching { java.time.LocalDate.parse(selectedEndDate ?: selectedDate) }.getOrNull()
+            ?: java.time.LocalDate.now()
+        DatePickerDialog(requireContext(), { _, y, m, d ->
+            selectedEndDate = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+            endDateButton.text = selectedEndDate
+        }, base.year, base.monthValue - 1, base.dayOfMonth).show()
+    }
+
     private fun saveReminder() {
         val title = titleEditText.text.toString()
         val description = descriptionEditText.text.toString()
@@ -410,8 +445,15 @@ class ReminderFragment : Fragment() {
         val id = idEditText.text.toString()
         val snooze = 1 // snoozeSpinner.selectedItemPosition
 
-        if (title.isEmpty() || description.isEmpty() || selectedDate == null || selectedTime == null ) {
+        val isProject = editing?.isProject == true
+        // a project's notes are optional; it also needs an end date that is not before its start
+        if (title.isEmpty() || (description.isEmpty() && !isProject) || selectedDate == null || selectedTime == null ||
+            (isProject && selectedEndDate == null)) {
             Snackbar.make(requireView(), "All fields are required", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        if (isProject && selectedEndDate!! < selectedDate!!) {
+            Snackbar.make(requireView(), "The end date must be on or after the start date", Snackbar.LENGTH_SHORT).show()
             return
         }
 
@@ -419,7 +461,14 @@ class ReminderFragment : Fragment() {
         val date = selectedDate!!            // yyyy-MM-dd
         val time = selectedTime!!            // HH:mm:00
 
-        val reminder = Reminder(title, description, date, time, id, link, priority, key, snooze, read, repeat)
+        val reminder = Reminder(
+            title, description, date, time, id, link, priority, key, snooze, read,
+            if (isProject) 0 else repeat,
+            Kind = editing?.Kind ?: Reminder.KIND_EVENT,
+            EndDate = if (isProject) selectedEndDate!! else "",
+            ProjectType = if (isProject) ProjectTypes.all[projectTypeSpinner.selectedItemPosition].key else "",
+            ParentId = editing?.ParentId ?: "",
+        )
         val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
         if (isOffline) {
             saveLocally(reminder)
@@ -571,7 +620,8 @@ class ReminderFragment : Fragment() {
                         ).show()
                     }
                 } else {
-                    Snackbar.make(requireView(), "Failed to add reminder", Snackbar.LENGTH_SHORT).show()
+                    // e.g. "Not part of the project's date range"
+                    Snackbar.make(requireView(), ApiErrors.message(response, "Failed to add reminder"), Snackbar.LENGTH_LONG).show()
                 }
             }
 
@@ -598,6 +648,10 @@ class ReminderFragment : Fragment() {
             read = "",
             isPending = true,
             pendingKey = reminder.Key,
+            kind = reminder.Kind,
+            endDate = reminder.EndDate,
+            projectType = reminder.ProjectType,
+            parentId = reminder.ParentId,
         )
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             AppDb.get(requireContext()).reminderDao().upsert(entity)

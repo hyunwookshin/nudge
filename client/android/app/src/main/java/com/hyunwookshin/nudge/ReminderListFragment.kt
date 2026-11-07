@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.snackbar.Snackbar
 
 // For creating a new reminder
 private val argDateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -207,6 +208,15 @@ class ReminderListFragment : Fragment(), Refreshable {
                 setReminderCallback(it)
             }
 
+            // a project's card opens it on the Projects page (where it is edited)
+            onProjectClick = { project ->
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, ProjectListFragment.newInstance(project.Id, isOffline))
+                    .addToBackStack(null)
+                    .commit()
+            }
+            onAddToProject = { event -> openAddToProject(event) }
+
             setOnReminderClick { reminder ->
                 val date = reminderLocalDate(reminder) ?: return@setOnReminderClick
                 // ring the card's date in the card's accent color, and bring it into view if needed
@@ -290,7 +300,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                 showLoading()
 
                 currentReminders = cached.sortedBy { it.Time }
-                reminderAdapter.setReminders(currentReminders)
+                showReminders(currentReminders)
                 miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
                 updateMiniCalendarMonth(miniCalAnchor)
 
@@ -337,7 +347,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                         withContext(Dispatchers.Main) {
                             if (!isAdded || view == null) return@withContext
                             currentReminders = allVisible
-                            reminderAdapter.setReminders(allVisible)
+                            showReminders(allVisible)
                             updateEmptyState()
                             miniCalAnchor = LocalDate.now()
                             miniCalendarAdapter.submit(buildMiniCalendarDays(allVisible, miniCalAnchor))
@@ -405,6 +415,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                 showDayMenu(date, anchorView)
             })
         miniCalendarRv.adapter = miniCalendarAdapter
+        miniCalendarRv.addItemDecoration(ProjectBandDecoration(requireContext(), miniCalendarAdapter))
     }
 
     private fun showDayMenu(date: LocalDate, anchor: View) {
@@ -547,6 +558,84 @@ class ReminderListFragment : Fragment(), Refreshable {
      * Each day is annotated with how many reminders fall on it and whether any are
      * high-priority (priority ≤ 1) or low-priority, for dot rendering in the cell.
      */
+    /** Start of the time window the list shows (projects that began earlier are only drawn on the calendar). */
+    private fun periodStart(): String {
+        val days = when (period) {
+            Period.CURRENT -> 0L
+            Period.SEVEN_DAYS -> 7L
+            Period.THIRTY_DAYS -> 30L
+        }
+        val cutoff = java.util.Date(System.currentTimeMillis() - days * 24L * 60 * 60 * 1000)
+        return java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(cutoff)
+    }
+
+    /**
+     * Puts [all] on screen. The server also sends projects that began before the window but are
+     * still running (so the calendar can draw their band): those are not listed as cards.
+     */
+    private fun showReminders(all: List<Reminder>) {
+        reminderAdapter.setProjectTitles(all.filter { it.isProject }.associate { it.Id to it.Title })
+        val windowStart = periodStart()
+        reminderAdapter.setReminders(all.filter { !it.isProject || it.Time >= windowStart })
+        miniCalendarAdapter.setBands(projectBands(all))
+    }
+
+    private fun projectBands(all: List<Reminder>): List<ProjectBand> =
+        all.filter { it.isProject }.mapNotNull { r ->
+            val start = runCatching { LocalDate.parse(r.Time.take(10)) }.getOrNull() ?: return@mapNotNull null
+            val end = runCatching { LocalDate.parse(r.EndDate) }.getOrNull() ?: return@mapNotNull null
+            ProjectBand(start, end, CardStyle.accentFor(requireContext(), r, CardStyle.iconFor(r)))
+        }.sortedBy { it.start }   // later starts are drawn last, on top
+
+    /** The "+" on an event: ask the server for the projects, then show the Add to Project dialog. */
+    private fun openAddToProject(event: Reminder) {
+        val api = ApiClient.getClient().create(ApiService::class.java)
+        api.getReminders(kind = Reminder.KIND_PROJECT).enqueue(object : Callback<ReminderResponse> {
+            override fun onResponse(call: Call<ReminderResponse>, response: Response<ReminderResponse>) {
+                if (!isAdded || view == null) return
+                val projects = response.body()?.reminders
+                if (!response.isSuccessful || projects == null) {
+                    Snackbar.make(requireView(), "Could not load projects", Snackbar.LENGTH_SHORT).show()
+                    return
+                }
+                AddToProjectDialog.show(
+                    requireContext(), event, projects,
+                    onGoToProjects = {
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, ProjectListFragment.newInstance(isOffline = isOffline))
+                            .addToBackStack(null)
+                            .commit()
+                    },
+                    onConfirm = { projectId, projectTitle -> setProject(event, projectId, projectTitle) },
+                )
+            }
+
+            override fun onFailure(call: Call<ReminderResponse>, t: Throwable) {
+                if (isAdded && view != null) Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun setProject(event: Reminder, projectId: String, projectTitle: String) {
+        val api = ApiClient.getClient().create(ApiService::class.java)
+        api.setProject(SetProjectRequest(event.Id, projectId)).enqueue(object : Callback<MessageResponse> {
+            override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
+                if (!isAdded || view == null) return
+                val message = if (response.isSuccessful) {
+                    fetchReminders()   // the card is indented under the project now
+                    if (projectId.isEmpty()) "Removed from project" else "Added to $projectTitle"
+                } else {
+                    ApiErrors.message(response, "Could not update the project")   // e.g. "Not part of the project's date range"
+                }
+                Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+            }
+
+            override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
+                if (isAdded && view != null) Snackbar.make(requireView(), "Network error: ${t.message}", Snackbar.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     /** Un-highlights the selected card and its date ring (a tap anywhere other than a card). */
     private fun clearCardSelection() {
         reminderAdapter.clearSelection()
@@ -764,7 +853,7 @@ class ReminderListFragment : Fragment(), Refreshable {
                     currentReminders = currentReminders.map { r ->
                         if (r.Id in syncedIds) r.copy(isPending = false) else r
                     }
-                    reminderAdapter.setReminders(currentReminders)
+                    showReminders(currentReminders)
                     // Background refresh to pick up server-assigned IDs for new reminders.
                     fetchReminders()
                 }
@@ -788,6 +877,14 @@ class ReminderListFragment : Fragment(), Refreshable {
                     val fragment = ReminderFragment.newInstance(isOffline)
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
+
+                R.id.menu_projects -> {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, ProjectListFragment.newInstance(isOffline = isOffline))
                         .addToBackStack(null)
                         .commit()
                     true

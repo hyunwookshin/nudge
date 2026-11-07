@@ -70,6 +70,17 @@
                         android:text="Description"
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="14sp" />
+
+                    <!-- events that belong to a project name it here -->
+                    <TextView
+                        android:id="@+id/projectTag"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="12sp"
+                        android:textStyle="italic"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <ImageView
@@ -135,6 +146,17 @@
                 android:layout_height="40dp"
                 android:contentDescription="Edit"
                 android:src="@drawable/ic_edit"
+                app:tint="?attr/colorOnSurface"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="10dp" />
+
+            <ImageButton
+                android:id="@+id/projectButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="Add to project"
+                android:src="@drawable/ic_add"
                 app:tint="?attr/colorOnSurface"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="10dp" />

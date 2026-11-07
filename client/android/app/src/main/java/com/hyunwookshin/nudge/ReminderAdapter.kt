@@ -33,6 +33,28 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
     private var onReminderClick: ((Reminder) -> Unit)? = null
     // tapped card: drawn with a thicker accent bar
     private var selectedId: String? = null
+
+    /** LIST: the main list (projects are minimal cards). PROJECTS: the Projects page (full cards). */
+    enum class Mode { LIST, PROJECTS }
+    var mode: Mode = Mode.LIST
+
+    // id -> title of every known project, for the tag on events that belong to one
+    private var projectTitles: Map<String, String> = emptyMap()
+    fun setProjectTitles(titles: Map<String, String>) { projectTitles = titles }
+
+    /** A project card was tapped in the main list: show it on the Projects page. */
+    var onProjectClick: ((Reminder) -> Unit)? = null
+    /** The "+" on an event: add it to a project. */
+    var onAddToProject: ((Reminder) -> Unit)? = null
+
+    /** Highlights a card (thick accent bar), e.g. the project the user came from. */
+    fun select(id: String?) {
+        val previous = reminders.indexOfFirst { it.Id == selectedId }
+        selectedId = id
+        if (previous >= 0) notifyItemChanged(previous)
+        val now = reminders.indexOfFirst { it.Id == id }
+        if (now >= 0) notifyItemChanged(now)
+    }
     // Template.matchKey() of every template, for the [T] badge
     private var templateKeys: Set<String> = emptySet()
 
@@ -93,6 +115,19 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             Calendar.getInstance().apply { time = date }.get(Calendar.YEAR)
         val pattern = if (sameYear) "EEE, MMM d · h:mm a" else "EEE, MMM d, yyyy · h:mm a"
         return SimpleDateFormat(pattern, Locale.getDefault()).format(date)
+    }
+
+    /** "Nov 10 – Nov 14" (with the year when it isn't this year) for a project's chip. */
+    private fun projectRange(r: Reminder): String {
+        val parse = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val start = runCatching { parse.parse(r.Time.take(10)) }.getOrNull()
+        val end = runCatching { parse.parse(r.EndDate) }.getOrNull()
+        if (start == null || end == null) return compactTime(r.Time)
+        val thisYear = Calendar.getInstance().get(Calendar.YEAR)
+        fun year(d: java.util.Date) = Calendar.getInstance().apply { time = d }.get(Calendar.YEAR)
+        fun fmt(d: java.util.Date) =
+            SimpleDateFormat(if (year(d) == thisYear) "MMM d" else "MMM d, yyyy", Locale.getDefault()).format(d)
+        return "${fmt(start)} – ${fmt(end)}"
     }
 
     fun setReminders(reminders: List<Reminder>) {
@@ -257,6 +292,8 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val read: TextView = itemView.findViewById(R.id.read)
         private val countdown: TextView = itemView.findViewById(R.id.countdown)
         private val templateBadge: TextView = itemView.findViewById(R.id.templateBadge)
+        private val projectTag: TextView = itemView.findViewById(R.id.projectTag)
+        private val projectButton: ImageButton = itemView.findViewById(R.id.projectButton)
         private val id: TextView = itemView.findViewById(R.id.id)
         private val editButton: ImageButton = itemView.findViewById(R.id.editButton)
         private val copyButton: ImageButton = itemView.findViewById(R.id.copyButton)
@@ -267,10 +304,23 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
         private val actionRow: View = itemView.findViewById(R.id.actionRow)
 
         fun bind(reminder: Reminder, readOnly: Boolean) {
-            title.text = reminder.Title
+            // In the main list a project is a minimal card: "<Project> begins", no notes or actions;
+            // tapping it opens it on the Projects page, where it is edited.
+            val compactProject = reminder.isProject && mode == Mode.LIST
+            title.text = if (compactProject) "${reminder.Title} begins" else reminder.Title
             pendingBadge.visibility = if (reminder.isPending) View.VISIBLE else View.GONE
             description.text = reminder.Description
-            time.text = compactTime(reminder.Time)
+            description.visibility = if (compactProject || reminder.Description.isBlank()) View.GONE else View.VISIBLE
+            time.text = if (reminder.isProject && mode == Mode.PROJECTS) projectRange(reminder) else compactTime(reminder.Time)
+
+            // events inside a project are indented a little and name the project
+            val member = !reminder.isProject && reminder.ParentId.isNotBlank() && mode == Mode.LIST
+            val margins = itemView.layoutParams as ViewGroup.MarginLayoutParams
+            margins.marginStart = ((if (member) 32 else 16) * itemView.resources.displayMetrics.density).toInt()
+            itemView.layoutParams = margins
+            val parentTitle = projectTitles[reminder.ParentId]
+            projectTag.visibility = if (member && parentTitle != null) View.VISIBLE else View.GONE
+            projectTag.text = if (parentTitle != null) "↳ $parentTitle" else ""
             val d = daysUntil(reminder.Time)
             if (d != null && d in 0..13) {
                 countdown.visibility = View.VISIBLE
@@ -291,8 +341,8 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             } else {
                 read.text = "Verified: " + convert24HourTo12Hour(reminder.Read)
             }
-            val iconRes = CardStyle.contextIconFor(reminder.Title, reminder.Description)
-            val accentColor = CardStyle.accentColor(itemView.context, iconRes, reminder.Priority)
+            val iconRes = CardStyle.iconFor(reminder)
+            val accentColor = CardStyle.accentFor(itemView.context, reminder, iconRes)
             // the 9dp column never changes width (so the content never shifts): selected cards
             // paint all of it, others only the left 5dp
             val unpainted = if (reminder.Id == selectedId) 0 else (4 * itemView.resources.displayMetrics.density).toInt()
@@ -301,7 +351,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             cardContent.background = CardStyle.cardArt(itemView.context, iconRes, accentColor, reminder.Id.hashCode().toLong())
             CardStyle.styleIcon(contextIcon, iconRes, accentColor)
 
-            val matchesTemplate = Template.matchKey(reminder.Title, reminder.Description, reminder.Link, reminder.Priority) in templateKeys
+            val matchesTemplate = !reminder.isProject && Template.matchKey(reminder.Title, reminder.Description, reminder.Link, reminder.Priority) in templateKeys
             templateBadge.visibility = if (matchesTemplate) View.VISIBLE else View.GONE
             if (matchesTemplate) {
                 val density = itemView.resources.displayMetrics.density
@@ -313,7 +363,7 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
 
             val isVirtual = reminder.Id.matches(Regex(".*_r\\d+$"))
-            if (readOnly) {
+            if (readOnly || compactProject) {
                 editButton.visibility = View.GONE
                 copyButton.visibility = View.GONE
             } else if (isOfflineMode) {
@@ -329,8 +379,13 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             copyButton.setOnClickListener {
                 reminderCallback?.onCopyReminder(reminder)
             }
+            // "+": add this event to a project (needs the server to check the date range)
+            val canJoinProject = !readOnly && !isOfflineMode && !reminder.isProject &&
+                !reminder.isPending && mode == Mode.LIST
+            projectButton.visibility = if (canJoinProject) View.VISIBLE else View.GONE
+            projectButton.setOnClickListener { onAddToProject?.invoke(reminder) }
             val link = reminder.Link
-            if (!link.isNullOrBlank()) {
+            if (!link.isNullOrBlank() && !compactProject) {
                 linkButton.visibility = View.VISIBLE
                 linkButton.setOnClickListener {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
@@ -358,11 +413,15 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
             }
             actionRow.setBackgroundColor(ColorUtils.setAlphaComponent(accentColor, 0x14))
             actionRow.visibility =
-                if (listOf(editButton, copyButton, linkButton, countdown, templateBadge).any { it.visibility == View.VISIBLE })
+                if (listOf(editButton, copyButton, linkButton, projectButton, countdown, templateBadge).any { it.visibility == View.VISIBLE })
                     View.VISIBLE else View.GONE
 
             // For updating the mini calendar anchored to the reminder
             itemView.setOnClickListener {
+                if (compactProject) {
+                    onProjectClick?.invoke(reminder)
+                    return@setOnClickListener
+                }
                 val previous = reminders.indexOfFirst { it.Id == selectedId }
                 selectedId = reminder.Id
                 if (previous >= 0) notifyItemChanged(previous)
