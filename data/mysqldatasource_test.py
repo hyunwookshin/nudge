@@ -49,6 +49,10 @@ def _make_row(title="Meeting", description="Team meeting"):
         "closed":      False,
         "snooze":      0,
         "repeat_days": 0,
+        "kind":        "event",
+        "end_date":    None,
+        "project_type": "",
+        "parent_id":   "",
     }
 
 
@@ -180,6 +184,35 @@ class TestMySQLDataSource(unittest.TestCase):
         self.assertEqual(info["Closed"],      False)
         self.assertEqual(info["Snooze"],      0)
         self.assertEqual(info["Repeat"],      0)
+        self.assertEqual(info["Kind"],        "event")
+        self.assertEqual(info["EndDate"],     "")
+        self.assertEqual(info["ParentId"],    "")
+
+    def test_row_to_info_project(self):
+        row = _make_row()
+        row.update(kind="project", end_date=datetime(2024, 7, 20).date(), project_type="trip", parent_id="")
+        info = self.ds._row_to_info(row)
+
+        self.assertEqual(info["Kind"],        "project")
+        self.assertEqual(info["EndDate"],     "2024-07-20")
+        self.assertEqual(info["ProjectType"], "trip")
+
+    @patch("data.mysqldatasource._connect")
+    def test_storeReminders_project_fields(self, mock_connect):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_cur = mock_conn.cursor.return_value.__enter__.return_value
+
+        p = reminder.Reminder({"Title": "Japan", "Description": "", "Time": "2024-07-14 09:00:00",
+                               "Link": "", "Closed": False, "Priority": 2, "Id": "p1",
+                               "Kind": "project", "EndDate": "2024-07-20", "ProjectType": "trip"})
+        member = reminder.Reminder({"Title": "Flight", "Description": "x", "Time": "2024-07-14 11:00:00",
+                                    "Link": "", "Closed": False, "Priority": 2, "Id": "e1", "ParentId": "p1"})
+        self.ds.storeReminders([p, member])
+
+        inserts = [c[0][1] for c in mock_cur.execute.call_args_list[1:]]
+        self.assertEqual(inserts[0][-4:], ("project", "2024-07-20", "trip", ""))
+        self.assertEqual(inserts[1][-4:], ("event", None, "", "p1"))      # plain event: NULL end date
 
 
     # ------------------------------------------------------------------

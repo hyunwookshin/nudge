@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS reminders (
     closed       BOOLEAN      NOT NULL DEFAULT FALSE,
     snooze       INT          NOT NULL DEFAULT 0,
     repeat_days  INT          NOT NULL DEFAULT 0,
+    kind         VARCHAR(16)  NOT NULL DEFAULT 'event',
+    end_date     DATE         NULL,
+    project_type VARCHAR(32)  NOT NULL DEFAULT '',
+    parent_id    VARCHAR(32)  NOT NULL DEFAULT '',
 
     PRIMARY KEY (id, username),
     INDEX idx_username (username),

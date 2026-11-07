@@ -44,7 +44,8 @@ class MySQLDataSource:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT id, title, description, link, time, read_time, "
-                    "       priority, closed, snooze, repeat_days "
+                    "       priority, closed, snooze, repeat_days, "
+                    "       kind, end_date, project_type, parent_id "
                     "FROM reminders WHERE username = %s",
                     (self.user,),
                 )
@@ -73,8 +74,9 @@ class MySQLDataSource:
                     cur.execute(
                         "INSERT INTO reminders "
                         "  (id, username, title, description, link, time, read_time, "
-                        "   priority, closed, snooze, repeat_days) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        "   priority, closed, snooze, repeat_days, "
+                        "   kind, end_date, project_type, parent_id) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                         (
                             info["Id"],
                             self.user,
@@ -87,6 +89,10 @@ class MySQLDataSource:
                             info["Closed"],
                             info["Snooze"],
                             info["Repeat"],
+                            info["Kind"],
+                            info["EndDate"] or None,   # DATE column: NULL for plain events
+                            info["ProjectType"],
+                            info["ParentId"],
                         ),
                     )
             conn.commit()
@@ -179,6 +185,10 @@ class MySQLDataSource:
             "Closed":      bool(row["closed"]),
             "Snooze":      row["snooze"],
             "Repeat":      row["repeat_days"],
+            "Kind":        row["kind"],
+            "EndDate":     row["end_date"].strftime("%Y-%m-%d") if row["end_date"] else "",
+            "ProjectType": row["project_type"],
+            "ParentId":    row["parent_id"],
         }
 
     def _template_row_to_info(self, row):
