@@ -18,7 +18,8 @@ object AddToProjectDialog {
         event.Time.take(10) >= project.Time.take(10) && event.Time.take(10) <= project.EndDate
 
     /**
-     * [projects] are all of the user's projects. [onGoToProjects] runs when there are none.
+     * [projects] are all of the user's projects; only those whose dates cover the event are offered
+     * (plus the event's current one). [onGoToProjects] runs when none can be offered.
      * [onConfirm] gets the chosen project's id, or "" to take the event out of its project.
      * The date range is checked here for a quick answer; the server checks it again.
      */
@@ -30,10 +31,14 @@ object AddToProjectDialog {
         onConfirm: (projectId: String, projectTitle: String) -> Unit,
     ) {
         val themed = R.style.RoundedMaterialDialog
-        if (projects.isEmpty()) {
+        val eligible = projects.filter { inRange(event, it) || it.Id == event.ParentId }
+        if (eligible.isEmpty()) {
             MaterialAlertDialogBuilder(context, themed)
                 .setTitle("Add to Project")
-                .setMessage("No projects created yet.")
+                .setMessage(
+                    if (projects.isEmpty()) "No projects created yet."
+                    else "No project covers ${event.Time.take(10)}. Create one that does, or change the event's date."
+                )
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Go to Projects") { _, _ -> onGoToProjects() }
                 .show()
@@ -47,14 +52,14 @@ object AddToProjectDialog {
         // entries: the projects, plus a way out when the event is already in one
         val entries = mutableListOf<Pair<String, Reminder?>>()
         if (event.ParentId.isNotBlank()) entries.add("None (remove from project)" to null)
-        projects.forEach { entries.add("${it.Title}  ·  ${it.Time.take(10)} – ${it.EndDate}" to it) }
+        eligible.forEach { entries.add("${it.Title}  ·  ${it.Time.take(10)} – ${it.EndDate}" to it) }
 
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_to_project, null)
         val layout = view.findViewById<TextInputLayout>(R.id.projectPickLayout)
         val pick = view.findViewById<AutoCompleteTextView>(R.id.projectPick)
         pick.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, entries.map { it.first }))
         var chosen = entries.indexOfFirst { it.second?.Id == event.ParentId }.takeIf { it >= 0 }
-            ?: if (entries.size == 1) 0 else -1
+            ?: if (entries.size == 1 && entries[0].second != null) 0 else -1
         if (chosen >= 0) pick.setText(entries[chosen].first, false)
         pick.setOnItemClickListener { _, _, position, _ -> chosen = position; layout.error = null }
 
