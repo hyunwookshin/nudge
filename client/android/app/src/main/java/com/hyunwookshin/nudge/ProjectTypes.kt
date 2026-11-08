@@ -24,6 +24,7 @@ object ProjectTypes {
         Type("presentation", "Presentation", R.drawable.ic_ctx_laptop),
         Type("dental", "Dental", R.drawable.ic_ctx_tooth),
         Type("eye", "Eye", R.drawable.ic_ctx_eye),
+        Type("beauty", "Hair & Skin", R.drawable.ic_ctx_lotion),
     )
 
     fun byKey(key: String): Type = all.firstOrNull { it.key == key } ?: all.first()

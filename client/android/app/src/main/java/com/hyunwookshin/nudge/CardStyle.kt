@@ -19,6 +19,8 @@ object CardStyle {
         setOf("flight", "flights", "airport", "fly", "flying", "trip") to R.drawable.ic_ctx_flight,
         setOf("car", "dmv", "drive", "driving", "roadtrip") to R.drawable.ic_ctx_car,
         setOf("dentist", "dental") to R.drawable.ic_ctx_tooth,
+        setOf("skin", "skincare", "hair", "haircut", "perm", "salon", "barber", "lotion", "facial",
+            "scissors") to R.drawable.ic_ctx_lotion,
         setOf("eye", "eyes", "optometry", "optometrist") to R.drawable.ic_ctx_eye,
         setOf("dinner", "lunch", "breakfast", "brunch", "supper", "food", "meal", "meals",
             "eat", "eating", "restaurant", "dining") to R.drawable.ic_ctx_restaurant,
@@ -41,6 +43,7 @@ object CardStyle {
         R.drawable.ic_ctx_people to R.color.ctx_people_accent,
         R.drawable.ic_ctx_flight to R.color.ctx_flight_accent,
         R.drawable.ic_ctx_restaurant to R.color.ctx_food_accent,
+        R.drawable.ic_ctx_lotion to R.color.ctx_beauty_accent,
     )
 
     // "Pajama print" motifs scattered behind the card content for the playful categories.
@@ -54,6 +57,7 @@ object CardStyle {
         R.drawable.ic_ctx_tshirt to listOf(R.drawable.art_clothes_shirt, R.drawable.art_clothes_hanger, R.drawable.art_clothes_sock),
         R.drawable.ic_ctx_hotel to listOf(R.drawable.art_hotel_bed, R.drawable.art_hotel_card, R.drawable.art_hotel_case, R.drawable.art_hotel_moon),
         R.drawable.ic_ctx_reservation to listOf(R.drawable.art_res_calendar, R.drawable.art_res_bell, R.drawable.art_res_clock),
+        R.drawable.ic_ctx_lotion to listOf(R.drawable.art_beauty_lotion, R.drawable.art_beauty_scissors, R.drawable.art_beauty_comb),
         R.drawable.ic_ctx_lesson to listOf(R.drawable.art_lesson_book, R.drawable.art_pen, R.drawable.art_lesson_cap, R.drawable.art_lesson_apple),
     )
 

@@ -20,6 +20,7 @@
     <color name="ctx_people_accent">#1F5FBF</color>
     <color name="ctx_flight_accent">#0A8BC9</color>
     <color name="ctx_food_accent">#5A9A28</color>
+    <color name="ctx_beauty_accent">#B03A78</color>
     <color name="card_surface">#FFFFFF</color>
     <color name="card_stroke">#E3E3E6</color>
 </resources>

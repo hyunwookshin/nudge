@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Card pattern motif (tinted with the card accent at runtime); see MotifPatternDrawable. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="56dp" android:height="80dp" android:viewportWidth="56" android:viewportHeight="80">
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.85" android:pathData="M18,34h20a6,6 0 0 1 6,6v28a6,6 0 0 1 -6,6h-20a6,6 0 0 1 -6,-6v-28a6,6 0 0 1 6,-6z" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.85" android:pathData="M22,24h12v10h-12z M25,12h6v12h-6z M25,8h17v6h-17z" />
+</vector>

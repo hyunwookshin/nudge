@@ -18,6 +18,7 @@
     <color name="ctx_people_accent">#7EB0FF</color>
     <color name="ctx_flight_accent">#8AD8FF</color>
     <color name="ctx_food_accent">#B4E27D</color>
+    <color name="ctx_beauty_accent">#F08CB8</color>
     <color name="card_surface">#1E1E20</color>
     <color name="card_stroke">#2E2E31</color>
 </resources>
