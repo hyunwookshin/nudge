@@ -81,6 +81,13 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         view.findViewById<View>(R.id.goBackButton).setOnClickListener { parentFragmentManager.popBackStack() }
         view.findViewById<View>(R.id.editProjectButton).setOnClickListener { callback?.onEditReminder(project, isOffline) }
 
+        view.findViewById<View>(R.id.addEventButton).setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ReminderFragment.newInstanceForProject(project, isOffline))
+                .addToBackStack(null)
+                .commit()
+        }
+
         adapter = ReminderAdapter().apply {
             mode = ReminderAdapter.Mode.PROJECT_EVENTS
             callback?.let { setReminderCallback(it) }

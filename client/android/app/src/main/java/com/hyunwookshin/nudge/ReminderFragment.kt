@@ -92,6 +92,9 @@ class ReminderFragment : Fragment() {
     companion object {
         private const val ARG_REMINDER = "reminder"
         private const val ARG_PREFILL_DATE = "prefill_date"
+        private const val ARG_PARENT_ID = "parent_id"
+        private const val ARG_PARENT_START = "parent_start"
+        private const val ARG_PARENT_END = "parent_end"
         private const val ARG_IS_OFFLINE = "is_offline"
         private const val ARG_TEMPLATE = "template"
 
@@ -118,6 +121,21 @@ class ReminderFragment : Fragment() {
             fragment.arguments = Bundle().apply {
                 putParcelable(ARG_TEMPLATE, template)
                 if (!date.isNullOrBlank()) putString(ARG_PREFILL_DATE, date)
+                putBoolean(ARG_IS_OFFLINE, isOffline)
+            }
+            return fragment
+        }
+
+        /** New event that joins [project]; the date starts at today, or the nearest day inside the project. */
+        fun newInstanceForProject(project: Reminder, isOffline: Boolean = false): ReminderFragment {
+            val start = project.Time.take(10)
+            val today = java.time.LocalDate.now().toString()
+            val fragment = ReminderFragment()
+            fragment.arguments = Bundle().apply {
+                putString(ARG_PREFILL_DATE, today.coerceIn(start, project.EndDate.ifBlank { start }))
+                putString(ARG_PARENT_ID, project.Id)
+                putString(ARG_PARENT_START, start)
+                putString(ARG_PARENT_END, project.EndDate)
                 putBoolean(ARG_IS_OFFLINE, isOffline)
             }
             return fragment
@@ -263,6 +281,10 @@ class ReminderFragment : Fragment() {
             aiBox.visibility = View.GONE
             topLoading.visibility = View.GONE
         }
+
+        // the AI box creates the event on the server directly (no project, no date-range check), so a
+        // project's new event is filled in by hand
+        if (!arguments?.getString(ARG_PARENT_ID).isNullOrBlank()) aiBox.visibility = View.GONE
 
         val reminder: Reminder? = arguments?.getParcelable(ARG_REMINDER)
         // Prepopulation when user long-pressed date on mini calendar
@@ -479,6 +501,15 @@ class ReminderFragment : Fragment() {
             return
         }
 
+        // a new event for a project has to fall inside the project's dates
+        val parentStart = arguments?.getString(ARG_PARENT_START)
+        val parentEnd = arguments?.getString(ARG_PARENT_END)
+        if (editing == null && !parentStart.isNullOrBlank() && !parentEnd.isNullOrBlank() &&
+            (selectedDate!! < parentStart || selectedDate!! > parentEnd)) {
+            Snackbar.make(requireView(), "Not part of the project's date range ($parentStart – $parentEnd)", Snackbar.LENGTH_LONG).show()
+            return
+        }
+
         // Your Reminder constructor seems to want separate date + time fields.
         val date = selectedDate!!            // yyyy-MM-dd
         val time = selectedTime!!            // HH:mm:00
@@ -489,7 +520,7 @@ class ReminderFragment : Fragment() {
             Kind = editing?.Kind ?: Reminder.KIND_EVENT,
             EndDate = if (isProject) selectedEndDate!! else "",
             ProjectType = if (isProject) ProjectTypes.all[projectTypeSpinner.selectedItemPosition].key else "",
-            ParentId = editing?.ParentId ?: "",
+            ParentId = editing?.ParentId ?: arguments?.getString(ARG_PARENT_ID) ?: "",
         )
         val isOffline = arguments?.getBoolean(ARG_IS_OFFLINE, false) ?: false
         if (isOffline) {
