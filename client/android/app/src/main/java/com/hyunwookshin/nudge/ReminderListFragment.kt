@@ -208,10 +208,10 @@ class ReminderListFragment : Fragment(), Refreshable {
                 setReminderCallback(it)
             }
 
-            // a project's card opens it on the Projects page (where it is edited)
+            // a project's card opens that project's own page
             onProjectClick = { project ->
                 parentFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, ProjectListFragment.newInstance(project.Id, isOffline))
+                    .replace(R.id.fragment_container, ProjectDetailFragment.newInstance(project, isOffline))
                     .addToBackStack(null)
                     .commit()
             }
