@@ -74,4 +74,25 @@ object MiniCalendarMath {
         if (date in visibleRange(firstOnTop)) return firstOnTop
         return date.minusWeeks(2)   // date's week = 4th (last) row
     }
+
+    /**
+     * The 28 [DayState]s for [anchor]: per day, how many of [reminders] fall on it and whether any is
+     * high priority (<= 1) or low, for the cell's fill.
+     */
+    fun buildDays(reminders: List<Reminder>, anchor: LocalDate): List<DayState> {
+        val range = visibleRange(anchor)
+        val agg = mutableMapOf<LocalDate, Triple<Int, Boolean, Boolean>>()
+        for (r in reminders) {
+            val date = runCatching { LocalDate.parse(r.Time.take(10)) }.getOrNull() ?: continue
+            if (date !in range) continue
+            val prev = agg[date] ?: Triple(0, false, false)
+            agg[date] = Triple(prev.first + 1, prev.second || r.Priority <= 1, prev.third || r.Priority > 1)
+        }
+        val dates = (0..27).map { range.start.plusDays(it.toLong()) }
+        val majority = majorityMonth(dates, YearMonth.from(anchor))
+        return dates.map { d ->
+            val t = agg[d] ?: Triple(0, false, false)
+            DayState(d, t.first, t.second, t.third, inMajorityMonth = YearMonth.from(d) == majority)
+        }
+    }
 }

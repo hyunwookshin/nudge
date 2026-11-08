@@ -33,6 +33,9 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         private const val ARG_PROJECT = "project"
         private const val ARG_IS_OFFLINE = "is_offline"
 
+        // remembered across project pages for the life of the app
+        private var calendarShown = true
+
         fun newInstance(project: Reminder, isOffline: Boolean = false): ProjectDetailFragment =
             ProjectDetailFragment().apply {
                 arguments = Bundle().apply {
@@ -49,6 +52,11 @@ class ProjectDetailFragment : Fragment(), Refreshable {
     private lateinit var offlineBanner: TextView
     private var isOffline = false
     private var eventCount = 0
+    private var events: List<Reminder> = emptyList()
+    private lateinit var calendar: MiniCalendarAdapter
+    private lateinit var calendarMonth: TextView
+    private lateinit var recyclerView: RecyclerView
+    private var calAnchor: LocalDate = LocalDate.now()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -81,15 +89,67 @@ class ProjectDetailFragment : Fragment(), Refreshable {
                 ProjectMembership.openAddToProject(this@ProjectDetailFragment, event, isOffline) { refresh() }
             }
         }
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         adapter.attachSwipeToDelete(recyclerView)
 
+        setupCalendar(view)
         showOffline(isOffline)
         bindHeader()
         loadCached()
         refresh()
+    }
+
+    /** The list page's calendar, fed only this project's events; the project's span is its band. */
+    private fun setupCalendar(view: View) {
+        calendarMonth = view.findViewById(R.id.miniCalendarMonth)
+        val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
+        rv.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 7)
+        calendar = MiniCalendarAdapter(onDayClick = { day ->
+            if (java.time.YearMonth.from(day) != java.time.YearMonth.from(calAnchor)) calAnchor = day   // a neighbouring month's day: move there
+            renderCalendar()
+            val key = day.toString()
+            val idx = events.sortedBy { it.Time }.indexOfFirst { it.Time.take(10) >= key }
+            if (idx >= 0) recyclerView.post { (recyclerView.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(idx, 0) }
+        })
+        rv.adapter = calendar
+        rv.addItemDecoration(ProjectBandDecoration(requireContext(), calendar))
+        view.findViewById<View>(R.id.miniCalPrev).setOnClickListener { calAnchor = calAnchor.plusMonths(-1).withDayOfMonth(10); renderCalendar() }
+        view.findViewById<View>(R.id.miniCalNext).setOnClickListener { calAnchor = calAnchor.plusMonths(1).withDayOfMonth(10); renderCalendar() }
+        calAnchor = startingAnchor()
+        renderCalendar()
+
+        val container = view.findViewById<View>(R.id.miniCalendarContainer)
+        val pill = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.calendarTogglePill)
+        fun applyVisibility() {
+            container.visibility = if (calendarShown) View.VISIBLE else View.GONE
+            pill.text = if (calendarShown) "Hide Calendar" else "Show Calendar"
+        }
+        applyVisibility()
+        pill.setOnClickListener { calendarShown = !calendarShown; applyVisibility() }
+    }
+
+    /** Today while the project is running, else the project's first day (the month worth looking at). */
+    private fun startingAnchor(): LocalDate {
+        val start = runCatching { LocalDate.parse(project.Time.take(10)) }.getOrNull() ?: return LocalDate.now()
+        val end = runCatching { LocalDate.parse(project.EndDate) }.getOrNull() ?: return start
+        val today = LocalDate.now()
+        return if (today.isBefore(start)) start else if (today.isAfter(end)) start else today
+    }
+
+    private fun renderCalendar() {
+        if (view == null) return
+        calendar.submit(MiniCalendarMath.buildDays(events, calAnchor))
+        calendarMonth.text = calAnchor.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy"))
+        val start = runCatching { LocalDate.parse(project.Time.take(10)) }.getOrNull()
+        val end = runCatching { LocalDate.parse(project.EndDate) }.getOrNull()
+        val ctx = requireContext()
+        calendar.setBands(
+            if (start != null && end != null)
+                listOf(ProjectBand(start, end, CardStyle.accentFor(ctx, project, CardStyle.iconFor(project))))
+            else emptyList()
+        )
     }
 
     private fun dao() = AppDb.get(requireContext()).reminderDao()
@@ -130,8 +190,10 @@ class ProjectDetailFragment : Fragment(), Refreshable {
     }
 
     private fun showEvents(events: List<Reminder>) {
+        this.events = events
         eventCount = events.size
         adapter.setReminders(events.sortedBy { it.Time })
+        renderCalendar()
         emptyText.visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
         view?.findViewById<TextView>(R.id.eventCountLabel)?.text = ProjectInfo.eventCountLabel(eventCount)
     }
@@ -167,7 +229,7 @@ class ProjectDetailFragment : Fragment(), Refreshable {
                     return
                 }
                 showOffline(false)
-                body.project?.let { project = it; bindHeader() }
+                body.project?.let { project = it; bindHeader(); renderCalendar() }
                 // an older server ignores ?parent= and sends everything: only keep this project's events
                 val events = body.reminders.filter { it.ParentId == project.Id }
                 showEvents(events)

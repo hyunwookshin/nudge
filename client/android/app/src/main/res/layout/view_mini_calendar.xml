@@ -1,0 +1,86 @@
+<!-- res/layout/view_mini_calendar.xml: the 4-week mini calendar card, shared by the list and project pages -->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/miniCalendarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:background="@drawable/bg_mini_calendar">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/miniCalendarHeader"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:paddingBottom="4dp">
+
+        <!-- LEFT -->
+        <ImageButton
+            android:id="@+id/miniCalPrev"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_chevron_left"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Previous month"
+            android:padding="12dp"
+            app:tint="@color/colorTextPrimary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <!-- CENTER (true center of screen) -->
+        <TextView
+            android:id="@+id/miniCalendarMonth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <!-- RIGHT -->
+        <ImageButton
+            android:id="@+id/miniCalNext"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_chevron_right"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Next month"
+            android:padding="12dp"
+            app:tint="@color/colorTextPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Weekday header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- S M T W T F S -->
+            <TextView style="@style/MiniCalHeader" android:text="S" />
+            <TextView style="@style/MiniCalHeader" android:text="M" />
+            <TextView style="@style/MiniCalHeader" android:text="T" />
+            <TextView style="@style/MiniCalHeader" android:text="W" />
+            <TextView style="@style/MiniCalHeader" android:text="T" />
+            <TextView style="@style/MiniCalHeader" android:text="F" />
+            <TextView style="@style/MiniCalHeader" android:text="S" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/miniCalendarRv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:overScrollMode="never" />
+    </LinearLayout>

@@ -604,39 +604,8 @@ class ReminderListFragment : Fragment(), Refreshable {
         miniCalendarAdapter.submit(buildMiniCalendarDays(currentReminders, miniCalAnchor))
     }
 
-    private fun buildMiniCalendarDays(
-        reminders: List<Reminder>,
-        anchor: LocalDate
-    ): List<DayState> {
-
-        // Align to Sunday (S M T W T F S). dayOfWeek.value is Mon=1…Sun=7; % 7 gives Sun=0.
-        val weekdayOffset = anchor.dayOfWeek.value % 7
-        val anchorWeekSunday = anchor.minusDays(weekdayOffset.toLong())
-
-        val start = anchorWeekSunday.minusDays(7)   // one week before anchor week
-        val end = start.plusDays(27)                 // 28 days total
-
-        val agg = mutableMapOf<LocalDate, Triple<Int, Boolean, Boolean>>()
-
-        for (r in reminders) {
-            val date = runCatching { LocalDate.parse(r.Time.take(10)) }.getOrNull() ?: continue
-            if (date.isBefore(start) || date.isAfter(end)) continue
-
-            val prev = agg[date] ?: Triple(0, false, false)
-            val count = prev.first + 1
-            val hasHigh = prev.second || (r.Priority <= 1)
-            val hasLow = prev.third || (r.Priority > 1)
-            agg[date] = Triple(count, hasHigh, hasLow)
-        }
-
-        val dates = (0..27).map { start.plusDays(it.toLong()) }
-        val majority = MiniCalendarMath.majorityMonth(dates, java.time.YearMonth.from(anchor))
-        return dates.map { d ->
-            val triple = agg[d] ?: Triple(0, false, false)
-            DayState(date = d, count = triple.first, hasHigh = triple.second, hasLow = triple.third,
-                inMajorityMonth = java.time.YearMonth.from(d) == majority)
-        }
-    }
+    private fun buildMiniCalendarDays(reminders: List<Reminder>, anchor: LocalDate): List<DayState> =
+        MiniCalendarMath.buildDays(reminders, anchor)
 
     private fun attachMonthSwipe(view: View) {
         val rv = view.findViewById<RecyclerView>(R.id.miniCalendarRv)
