@@ -40,11 +40,12 @@ class ReminderFragment : Fragment() {
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
     private lateinit var linkEditText: EditText
-    private lateinit var prioritySpinner: Spinner
-    private lateinit var repeatSpinner: Spinner
+    private lateinit var prioritySpinner: ChoiceChips
+    private lateinit var repeatSpinner: ChoiceChips
     private lateinit var saveButton: Button
     private lateinit var saveTemplateButton: Button
     private lateinit var projectFields: View
+    private lateinit var repeatRow: View
     private lateinit var endDateButton: Button
     private lateinit var projectTypeSpinner: Spinner
     private var selectedEndDate: String? = null       // yyyy-MM-dd, projects only
@@ -156,6 +157,8 @@ class ReminderFragment : Fragment() {
         passwordEditText = view.findViewById(R.id.passwordEditText)
         prioritySpinner = view.findViewById(R.id.prioritySpinner)
         repeatSpinner = view.findViewById(R.id.repeatSpinner)
+        prioritySpinner.setEntries(resources.getStringArray(R.array.priority_chips).toList())
+        repeatSpinner.setEntries(resources.getStringArray(R.array.repeat_chips).toList())
         saveButton = view.findViewById(R.id.saveButton)
         snoozeSpinner = view.findViewById(R.id.snoozeSpinner)
         idEditText = view.findViewById(R.id.idEditText)
@@ -234,6 +237,7 @@ class ReminderFragment : Fragment() {
         timeButton.setOnClickListener { showTimePicker() }
         saveButton.setOnClickListener { saveReminder() }
         projectFields = view.findViewById(R.id.projectFields)
+        repeatRow = view.findViewById(R.id.repeatRow)
         endDateButton = view.findViewById(R.id.endDateButton)
         projectTypeSpinner = view.findViewById(R.id.projectTypeSpinner)
         endDateButton.setOnClickListener { pickEndDate() }
@@ -266,7 +270,7 @@ class ReminderFragment : Fragment() {
         if (!prefillDate.isNullOrBlank()) {
             pageTitle.text = "Add Reminder"
             selectedDate = prefillDate
-            dateButton.text = prefillDate
+            showDate()
             aiInputEditText.hint = "Generate using AI for $selectedDate"
         }
 
@@ -301,13 +305,13 @@ class ReminderFragment : Fragment() {
 
                 // selectedDate = yyyy-MM-dd
                 selectedDate = apiDateFormat.format(selectedCal.time)
-                dateButton.text = selectedDate
+                showDate()
 
                 // selectedTime = HH:mm:00
                 val hour = selectedCal.get(Calendar.HOUR_OF_DAY)
                 val minute = selectedCal.get(Calendar.MINUTE)
                 selectedTime = String.format(Locale.US, "%02d:%02d:00", hour, minute)
-                timeButton.text = selectedTime
+                showTime()
             } else {
                 // If parsing fails, leave buttons as-is; user can pick again
                 selectedDate = null
@@ -357,7 +361,7 @@ class ReminderFragment : Fragment() {
 
                 val date = apiDateFormat.format(selectedCal.time) // yyyy-MM-dd
                 selectedDate = date
-                dateButton.text = date
+                showDate()
             },
             year, month, day
         )
@@ -395,7 +399,7 @@ class ReminderFragment : Fragment() {
 
                 val time = String.format(Locale.US, "%02d:%02d:00", h, min)
                 selectedTime = time
-                timeButton.text = time
+                showTime()
             },
             hour, minute,
             true
@@ -411,22 +415,40 @@ class ReminderFragment : Fragment() {
     /** Project mode of the editor: end date and type fields, no repeat, no "Save as Template". */
     private fun setupProjectEditing(p: Reminder) {
         projectFields.visibility = View.VISIBLE
-        repeatSpinner.visibility = View.GONE
+        repeatRow.visibility = View.GONE   // not requireView(): this runs inside onCreateView, before the view exists
         saveTemplateButton.visibility = View.GONE
         pageTitle.text = if (p.Title.isBlank()) "New Project" else "${p.Title} begins"
         selectedEndDate = p.EndDate.ifBlank { null }
-        endDateButton.text = selectedEndDate ?: "End date"
+        showEndDate()
         projectTypeSpinner.adapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_spinner_dropdown_item, ProjectTypes.all.map { it.label })
         projectTypeSpinner.setSelection(ProjectTypes.all.indexOfFirst { it.key == p.ProjectType }.coerceAtLeast(0))
     }
+
+    /** "Fri, Nov 7" (with the year when it isn't this year); [ymd] is yyyy-MM-dd. */
+    private fun prettyDate(ymd: String): String = runCatching {
+        val d = java.time.LocalDate.parse(ymd)
+        val pattern = if (d.year == java.time.LocalDate.now().year) "EEE, MMM d" else "EEE, MMM d, yyyy"
+        d.format(java.time.format.DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
+    }.getOrDefault(ymd)
+
+    /** "9:00 AM" in the phone's own style; [hms] is HH:mm:ss. */
+    private fun prettyTime(hms: String): String = runCatching {
+        java.time.LocalTime.parse(hms).format(
+            java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+    }.getOrDefault(hms)
+
+    // the buttons are rows: they show the chosen value, or invite to pick one
+    private fun showDate() { dateButton.text = selectedDate?.let(::prettyDate) ?: "Add date" }
+    private fun showTime() { timeButton.text = selectedTime?.let(::prettyTime) ?: "Add time" }
+    private fun showEndDate() { endDateButton.text = selectedEndDate?.let(::prettyDate) ?: "End date" }
 
     private fun pickEndDate() {
         val base = runCatching { java.time.LocalDate.parse(selectedEndDate ?: selectedDate) }.getOrNull()
             ?: java.time.LocalDate.now()
         DatePickerDialog(requireContext(), { _, y, m, d ->
             selectedEndDate = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
-            endDateButton.text = selectedEndDate
+            showEndDate()
         }, base.year, base.monthValue - 1, base.dayOfMonth).show()
     }
 

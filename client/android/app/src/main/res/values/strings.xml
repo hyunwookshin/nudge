@@ -11,6 +11,18 @@
         <item>Medium Priority</item>
         <item>Low Priority</item>
     </string-array>
+    <!-- short labels for the chips in the editor (same order as priority_array / repeat_array) -->
+    <string-array name="priority_chips">
+        <item>Very high</item>
+        <item>High</item>
+        <item>Medium</item>
+        <item>Low</item>
+    </string-array>
+    <string-array name="repeat_chips">
+        <item>Once</item>
+        <item>Weekly</item>
+        <item>Every 2 weeks</item>
+    </string-array>
     <string-array name="snooze_array">
         <item>One Reminder</item>
         <item>Two Reminders</item>
