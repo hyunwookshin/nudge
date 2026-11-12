@@ -8,11 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +24,8 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * One project on its own page: its details on top (type, dates, where it stands, notes, how many
@@ -102,6 +106,7 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         adapter.attachSwipeToDelete(recyclerView)
 
         setupCalendar(view)
+        view.findViewById<View>(R.id.scrollNextPill).setOnClickListener { scrollToNextEvent() }
         showOffline(isOffline)
         bindHeader()
         loadCached()
@@ -134,10 +139,24 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         fun applyVisibility() {
             container.visibility = if (calendarShown) View.VISIBLE else View.GONE
             headerCard.visibility = if (calendarShown) View.GONE else View.VISIBLE
-            pill.text = if (calendarShown) "Show Details" else "Show Calendar"
+            pill.text = if (calendarShown) "Show Summary" else "Show Calendar"
         }
         applyVisibility()
         pill.setOnClickListener { calendarShown = !calendarShown; applyVisibility() }
+    }
+
+    private fun scrollToNextEvent() {
+        val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        val idx = events.sortedBy { it.Time }.indexOfFirst { it.Time >= now }
+        if (idx < 0) {
+            Toast.makeText(requireContext(), "No upcoming events", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val scroller = object : LinearSmoothScroller(requireContext()) {
+            override fun getVerticalSnapPreference() = SNAP_TO_START
+        }
+        scroller.targetPosition = idx
+        recyclerView.layoutManager?.startSmoothScroll(scroller)
     }
 
     /** Today while the project is running, else the project's first day (the month worth looking at). */
@@ -173,8 +192,7 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         root.findViewById<TextView>(R.id.projectTitle).text = project.Title
         root.findViewById<View>(R.id.headerAccent).setBackgroundColor(accent)
         CardStyle.styleIcon(root.findViewById<ImageView>(R.id.typeIcon), icon, accent)
-        root.findViewById<TextView>(R.id.typeLabel).text =
-            if (project.ProjectType.isBlank()) "Project" else ProjectTypes.byKey(project.ProjectType).label
+        root.findViewById<TextView>(R.id.typeLabel).text = "Summary"
 
         val start = runCatching { LocalDate.parse(project.Time.take(10)) }.getOrNull()
         val end = runCatching { LocalDate.parse(project.EndDate) }.getOrNull()
