@@ -231,6 +231,7 @@ class ReminderListFragment : Fragment(), Refreshable {
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = reminderAdapter
+        recyclerView.addItemDecoration(DaySeparatorDecoration(requireContext(), reminderAdapter))
         // a tap on empty list space (not on a card) clears the card highlight
         // only a real tap counts: not the end of a scroll or fling that happens to finish below the cards
         val tapSlop = android.view.ViewConfiguration.get(requireContext()).scaledTouchSlop

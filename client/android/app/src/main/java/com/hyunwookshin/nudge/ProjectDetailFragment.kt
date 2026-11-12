@@ -103,6 +103,7 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
+        recyclerView.addItemDecoration(DaySeparatorDecoration(requireContext(), adapter))
         adapter.attachSwipeToDelete(recyclerView)
 
         setupCalendar(view)

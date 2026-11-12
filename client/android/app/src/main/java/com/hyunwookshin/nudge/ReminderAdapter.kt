@@ -259,6 +259,8 @@ class ReminderAdapter : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>
 
     override fun getItemCount(): Int = reminders.size
 
+    fun reminderAt(position: Int): Reminder? = reminders.getOrNull(position)
+
     private fun daysUntil(reminderTime: String): Long? {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         val target = inputFormat.parse(reminderTime) ?: return null
