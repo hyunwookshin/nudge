@@ -46,6 +46,26 @@
             app:tint="?attr/colorOnSurface" />
     </LinearLayout>
 
+    <!-- swaps the details card for this project's calendar, in the same spot -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/calendarTogglePill"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minHeight="40dp"
+        android:paddingVertical="8dp"
+        android:text="Show Calendar"
+        android:textAllCaps="false"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="12sp"
+        app:cornerRadius="18dp"
+        app:strokeColor="@color/colorTextPrimary"
+        app:strokeWidth="1dp" />
+
     <!-- the project's details -->
     <LinearLayout
         android:id="@+id/headerCard"
@@ -131,26 +151,6 @@
                 android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
-
-    <!-- this project's events only, with its span as a band -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/calendarTogglePill"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="8dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:minHeight="40dp"
-        android:paddingVertical="8dp"
-        android:text="Hide Calendar"
-        android:textAllCaps="false"
-        android:textColor="@color/colorTextPrimary"
-        android:textSize="12sp"
-        app:cornerRadius="18dp"
-        app:strokeColor="@color/colorTextPrimary"
-        app:strokeWidth="1dp" />
 
     <include layout="@layout/view_mini_calendar" />
 

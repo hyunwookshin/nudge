@@ -34,7 +34,7 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         private const val ARG_IS_OFFLINE = "is_offline"
 
         // remembered across project pages for the life of the app
-        private var calendarShown = true
+        private var calendarShown = false
 
         fun newInstance(project: Reminder, isOffline: Boolean = false): ProjectDetailFragment =
             ProjectDetailFragment().apply {
@@ -127,11 +127,14 @@ class ProjectDetailFragment : Fragment(), Refreshable {
         calAnchor = startingAnchor()
         renderCalendar()
 
+        // the calendar takes the details card's place so the events list keeps its room
         val container = view.findViewById<View>(R.id.miniCalendarContainer)
+        val headerCard = view.findViewById<View>(R.id.headerCard)
         val pill = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.calendarTogglePill)
         fun applyVisibility() {
             container.visibility = if (calendarShown) View.VISIBLE else View.GONE
-            pill.text = if (calendarShown) "Hide Calendar" else "Show Calendar"
+            headerCard.visibility = if (calendarShown) View.GONE else View.VISIBLE
+            pill.text = if (calendarShown) "Show Details" else "Show Calendar"
         }
         applyVisibility()
         pill.setOnClickListener { calendarShown = !calendarShown; applyVisibility() }
